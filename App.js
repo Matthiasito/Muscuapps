@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -9,20 +9,20 @@ import {
   SafeAreaView,
   StatusBar,
   Switch,
+  Animated,
 } from 'react-native';
 
 const INITIAL_BASE_EXERCISES = [
-  { group: 'Dos 🦇', exercises: [{ name: 'Traction pronation', muscle: 'Dos 🦇' }, { name: 'Traction supination', muscle: 'Dos 🦇' }, { name: 'Tirage vertical', muscle: 'Dos 🦇' }, { name: 'Tirage horizontal', muscle: 'Dos 🦇' }, { name: 'Chaise romaine', muscle: 'Dos 🦇' }, { name: 'Rowing haltère', muscle: 'Dos 🦇' }, { name: 'Rowing barre', muscle: 'Dos 🦇' }] },
-  { group: 'Biceps 💪', exercises: [{ name: 'Curl haltère pronation', muscle: 'Biceps 💪' }, { name: 'Curl marteau', muscle: 'Biceps 💪' }, { name: 'Curl barre EZ', muscle: 'Biceps 💪' }, { name: 'Curl pupitre', muscle: 'Biceps 💪' }, { name: 'Curl incliné', muscle: 'Biceps 💪' }] },
-  { group: 'Pectoraux 🦍', exercises: [{ name: 'Développé couché', muscle: 'Pectoraux 🦍' }, { name: 'Développé incliné', muscle: 'Pectoraux 🦍' }, { name: 'Développé décliné', muscle: 'Pectoraux 🦍' }, { name: 'Dips', muscle: 'Pectoraux 🦍' }, { name: 'Pompes', muscle: 'Pectoraux 🦍' }, { name: 'Écartés haltères', muscle: 'Pectoraux 🦍' }, { name: 'Pull-over', muscle: 'Pectoraux 🦍' }] },
-  { group: 'Jambes 🦵', exercises: [{ name: 'Squat', muscle: 'Jambes 🦵' }, { name: 'Presse à cuisses', muscle: 'Jambes 🦵' }, { name: 'Fentes', muscle: 'Jambes 🦵' }, { name: 'Soulevé de terre', muscle: 'Jambes 🦵' }, { name: 'Leg extension', muscle: 'Jambes 🦵' }, { name: 'Leg curl', muscle: 'Jambes 🦵' }, { name: 'Mollets debout', muscle: 'Jambes 🦵' }] },
-  { group: 'Épaules 🦾', exercises: [{ name: 'Développé militaire', muscle: 'Épaules 🦾' }, { name: 'Élévations latérales', muscle: 'Épaules 🦾' }, { name: 'Oiseau', muscle: 'Épaules 🦾' }, { name: 'Développé arnold', muscle: 'Épaules 🦾' }, { name: 'Tirage menton', muscle: 'Épaules 🦾' }] },
-  { group: 'Triceps 🦾', exercises: [{ name: 'Barre front', muscle: 'Triceps 🦾' }, { name: 'Extension poulie haute', muscle: 'Triceps 🦾' }, { name: 'Dips banquette', muscle: 'Triceps 🦾' }, { name: 'Kickback', muscle: 'Triceps 🦾' }] },
+  { group: 'Dos 🦇', exercises: [] },
+  { group: 'Biceps 💪', exercises: [] },
+  { group: 'Pectoraux 🦍', exercises: [] },
+  { group: 'Jambes 🦵', exercises: [] },
+  { group: 'Épaules 🦾', exercises: [] },
+  { group: 'Triceps 🦾', exercises: [] },
 ];
 
 const MUSCLE_CATEGORIES = ['Tous', 'Dos 🦇', 'Biceps 💪', 'Pectoraux 🦍', 'Jambes 🦵', 'Épaules 🦾', 'Triceps 🦾'];
 
-// Génération automatique de 1m40 à 2m00 centimètre par centimètre pour un choix ultra précis
 const HEIGHT_OPTIONS = [];
 for (let cm = 140; cm <= 200; cm++) {
   const meters = Math.floor(cm / 100);
@@ -30,7 +30,7 @@ for (let cm = 140; cm <= 200; cm++) {
   HEIGHT_OPTIONS.push(`${meters}m${centimeters < 10 ? '0' : ''}${centimeters}`);
 }
 
-const POLYARTICULAR_LIST = [
+const POLYARTICULAR_EXERCISES = [
   'Développé couché',
   'Développé incliné',
   'Squat',
@@ -38,6 +38,79 @@ const POLYARTICULAR_LIST = [
   'Traction pronation',
   'Développé militaire'
 ];
+
+// Composant de bouton animé avec effet de zoom au clic
+function AnimatedButton({ onPress, style, children, activeOpacity = 0.9 }) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1.12,
+      useNativeDriver: true,
+      speed: 30,
+      bounciness: 10,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 4,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+    if (onPress) onPress();
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={activeOpacity}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      style={{ width: '100%', alignItems: 'center' }}
+    >
+      <Animated.View style={[style, { transform: [{ scale: scaleAnim }], width: '100%', alignItems: 'center' }]}>
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
+// Bouton animé pour les éléments en ligne (comme les + de séries)
+function AnimatedInlineButton({ onPress, style, children }) {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1.25,
+      useNativeDriver: true,
+      speed: 35,
+      bounciness: 12,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 4,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+    if (onPress) onPress();
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.9}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      <Animated.View style={[style, { transform: [{ scale: scaleAnim }] }]}>
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('home');
@@ -47,27 +120,15 @@ export default function App() {
   const [currentWeight, setCurrentWeight] = useState('75.0');
   const [gender, setGender] = useState('Homme');
   const [height, setHeight] = useState('1m78');
-  const [weightHistory, setWeightHistory] = useState([
-    { id: '1', date: '01/10/2026', weight: '76.0' },
-  ]);
+  const [weightHistory, setWeightHistory] = useState([]);
 
-  const [workouts, setWorkouts] = useState([
-    { id: '1', name: 'Haut du corps (Pectoraux / Dos)' },
-    { id: '2', name: 'Bas du corps (Jambes)' },
-  ]);
+  const [cycles, setCycles] = useState([]);
+  const [selectedCycle, setSelectedCycle] = useState(null);
+
+  const [workouts, setWorkouts] = useState([]);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
-  const [newWorkoutName, setNewWorkoutName] = useState('');
 
-  const [exercises, setExercises] = useState([
-    {
-      id: '1',
-      workoutId: '1',
-      name: 'Développé couché',
-      muscle: 'Pectoraux 🦍',
-      sets: [{ id: 1, reps: '10', weight: '80' }],
-      history: [{ date: '17/10/2026', summary: '10 reps × 82 kg' }],
-    },
-  ]);
+  const [exercises, setExercises] = useState([]);
   
   const [baseExercisesList, setBaseExercisesList] = useState(INITIAL_BASE_EXERCISES);
   const [selectedExItems, setSelectedExItems] = useState([]);
@@ -76,13 +137,9 @@ export default function App() {
   const [selectedMuscleCategory, setSelectedMuscleCategory] = useState('Pectoraux 🦍');
   const [activeLibraryFilter, setActiveLibraryFilter] = useState('Tous');
 
-  const [globalHistory, setGlobalHistory] = useState([
-    { id: '1', date: '17/10/2026', workoutName: 'Haut du corps (Pectoraux / Dos)', summary: 'Développé couché (Pectoraux 🦍) : 10 reps × 82 kg' }
-  ]);
-
-  const [maxiRepsHistory, setMaxiRepsHistory] = useState([
-    { id: '1', date: '17/10/2026', exerciseName: 'Développé couché', record: '82 kg × 10 reps' }
-  ]);
+  const [globalHistory, setGlobalHistory] = useState([]);
+  const [maxiRecords, setMaxiRecords] = useState({});
+  const [maxiRecordsHistory, setMaxiRecordsHistory] = useState([]);
 
   const [amrapSeconds, setAmrapSeconds] = useState(0);
   const [isAmrapActive, setIsAmrapActive] = useState(false);
@@ -105,20 +162,24 @@ export default function App() {
       const savedWeight = localStorage.getItem('fit_weight_hist');
       const savedGlobalHist = localStorage.getItem('fit_global_hist');
       const savedBaseEx = localStorage.getItem('fit_base_ex_list');
-      const savedMaxiHist = localStorage.getItem('fit_maxi_reps_hist');
+      const savedMaxiRecords = localStorage.getItem('fit_maxi_records');
+      const savedMaxiHist = localStorage.getItem('fit_maxi_records_hist');
       const savedDarkMode = localStorage.getItem('fit_dark_mode');
       const savedProfileGender = localStorage.getItem('fit_gender');
       const savedProfileHeight = localStorage.getItem('fit_height');
+      const savedCycles = localStorage.getItem('fit_cycles');
       
       if (savedWorkouts) setWorkouts(JSON.parse(savedWorkouts));
       if (savedExercises) setExercises(JSON.parse(savedExercises));
       if (savedWeight) setWeightHistory(JSON.parse(savedWeight));
       if (savedGlobalHist) setGlobalHistory(JSON.parse(savedGlobalHist));
       if (savedBaseEx) setBaseExercisesList(JSON.parse(savedBaseEx));
-      if (savedMaxiHist) setMaxiRepsHistory(JSON.parse(savedMaxiHist));
+      if (savedMaxiRecords) setMaxiRecords(JSON.parse(savedMaxiRecords));
+      if (savedMaxiHist) setMaxiRecordsHistory(JSON.parse(savedMaxiHist));
       if (savedDarkMode !== null) setIsDarkMode(JSON.parse(savedDarkMode));
       if (savedProfileGender) setGender(savedProfileGender);
       if (savedProfileHeight) setHeight(savedProfileHeight);
+      if (savedCycles) setCycles(JSON.parse(savedCycles));
     } catch (e) {
       console.log('Erreur chargement stockage', e);
     }
@@ -131,14 +192,34 @@ export default function App() {
       localStorage.setItem('fit_weight_hist', JSON.stringify(weightHistory));
       localStorage.setItem('fit_global_hist', JSON.stringify(globalHistory));
       localStorage.setItem('fit_base_ex_list', JSON.stringify(baseExercisesList));
-      localStorage.setItem('fit_maxi_reps_hist', JSON.stringify(maxiRepsHistory));
+      localStorage.setItem('fit_maxi_records', JSON.stringify(maxiRecords));
+      localStorage.setItem('fit_maxi_records_hist', JSON.stringify(maxiRecordsHistory));
       localStorage.setItem('fit_dark_mode', JSON.stringify(isDarkMode));
       localStorage.setItem('fit_gender', gender);
       localStorage.setItem('fit_height', height);
+      localStorage.setItem('fit_cycles', JSON.stringify(cycles));
     } catch (e) {
       console.log('Erreur sauvegarde stockage', e);
     }
-  }, [workouts, exercises, weightHistory, globalHistory, baseExercisesList, maxiRepsHistory, isDarkMode, gender, height]);
+  }, [workouts, exercises, weightHistory, globalHistory, baseExercisesList, maxiRecords, maxiRecordsHistory, isDarkMode, gender, height, cycles]);
+
+  const addNewCyclePrompt = () => {
+    const cycleName = prompt("Nom du nouveau cycle d'entraînement :");
+    if (cycleName && cycleName.trim()) {
+      setCycles([...cycles, { id: Date.now().toString(), name: cycleName.trim() }]);
+    }
+  };
+
+  const addNewWorkoutPrompt = () => {
+    const workoutName = prompt("Nom de la nouvelle séance :");
+    if (workoutName && workoutName.trim()) {
+      setWorkouts([...workouts, { id: Date.now().toString(), name: workoutName.trim() }]);
+    }
+  };
+
+  const deleteCycle = (cycleId) => {
+    setCycles(cycles.filter(c => c.id !== cycleId));
+  };
 
   const deleteWorkout = (workoutId) => {
     setWorkouts(workouts.filter(w => w.id !== workoutId));
@@ -147,12 +228,6 @@ export default function App() {
 
   const deleteExercise = (exId) => {
     setExercises(exercises.filter(e => e.id !== exId));
-  };
-
-  const addNewWorkout = () => {
-    if (!newWorkoutName.trim()) return;
-    setWorkouts([...workouts, { id: Date.now().toString(), name: newWorkoutName }]);
-    setNewWorkoutName('');
   };
 
   const createCustomExercise = () => {
@@ -257,11 +332,22 @@ export default function App() {
     }));
   };
 
+  const updateMaxRecordPrompt = (exName) => {
+    const val = prompt(`Entrez votre record (1 Rep) pour ${exName} (ex: 100 kg) :`);
+    if (val && val.trim()) {
+      const today = new Date().toLocaleDateString('fr-FR');
+      setMaxiRecords({ ...maxiRecords, [exName]: val.trim() });
+      setMaxiRecordsHistory([
+        { id: Date.now().toString(), date: today, exerciseName: exName, record: val.trim() },
+        ...maxiRecordsHistory
+      ]);
+    }
+  };
+
   const finishWorkout = () => {
     if (!selectedWorkout) return;
     const today = new Date().toLocaleDateString('fr-FR');
     let summaryParts = [];
-    let newMaxiEntries = [];
 
     const updatedExercises = exercises.map(ex => {
       if (ex.workoutId === selectedWorkout.id) {
@@ -269,15 +355,6 @@ export default function App() {
         const setDetails = `${firstSet.reps || '0'} reps × ${firstSet.weight || '0'} kg`;
         
         summaryParts.push(`${ex.name} (${ex.muscle}) : ${setDetails}`);
-
-        if (POLYARTICULAR_LIST.includes(ex.name)) {
-          newMaxiEntries.push({
-            id: Date.now().toString() + Math.random(),
-            date: today,
-            exerciseName: ex.name,
-            record: `${firstSet.weight || '0'} kg × ${firstSet.reps || '0'} reps`
-          });
-        }
 
         const newHistoryEntry = { date: today, summary: setDetails };
         return {
@@ -299,10 +376,6 @@ export default function App() {
     };
     setGlobalHistory([newGlobalEntry, ...globalHistory]);
 
-    if (newMaxiEntries.length > 0) {
-      setMaxiRepsHistory([...newMaxiEntries, ...maxiRepsHistory]);
-    }
-
     alert('Séance terminée ! Première série enregistrée avec succès 🎉');
     setCurrentScreen('home');
   };
@@ -312,6 +385,7 @@ export default function App() {
   const textColor = isDarkMode ? '#F9FAFB' : '#111827';
   const subText = isDarkMode ? '#9CA3AF' : '#6B7280';
   const inputBg = isDarkMode ? '#374151' : '#E5E7EB';
+  const cardBorder = isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
@@ -321,91 +395,172 @@ export default function App() {
       {currentScreen === 'home' && (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.topBar}>
-            <TouchableOpacity style={[styles.pillButton, { backgroundColor: cardBg }]} onPress={() => setCurrentScreen('globalHistory')}>
-              <Text style={{ fontSize: fontSize, color: textColor, fontWeight: '600' }}>📊 Historique</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.pillButton, { backgroundColor: cardBg }]} onPress={() => setCurrentScreen('settings')}>
+            <TouchableOpacity style={[styles.pillButton, { backgroundColor: cardBg, borderColor: cardBorder }]} onPress={() => setCurrentScreen('settings')}>
               <Text style={{ fontSize: fontSize, color: textColor, fontWeight: '600' }}>⚙️ Réglages</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.pillButton, { backgroundColor: cardBg, borderColor: cardBorder }]} onPress={() => setCurrentScreen('globalHistory')}>
+              <Text style={{ fontSize: fontSize, color: textColor, fontWeight: '600' }}>📊 Historique</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.heroSection}>
-            <Text style={[styles.appTitle, { fontSize: fontSize + 8, color: textColor }]}>FitTracker ⚡</Text>
+            <AnimatedButton onPress={() => {}}>
+              <Text style={[styles.appTitle, { fontSize: fontSize + 8, color: textColor }]}>FitTracker ⚡</Text>
+            </AnimatedButton>
             <Text style={[styles.appSubtitle, { fontSize: fontSize - 2, color: subText }]}>Données sauvegardées automatiquement</Text>
 
-            <TouchableOpacity style={[styles.pillButtonLarge, { backgroundColor: cardBg, marginBottom: 15 }]} onPress={() => setCurrentScreen('profile')}>
+            <TouchableOpacity style={[styles.pillButtonLarge, { backgroundColor: cardBg, borderColor: cardBorder, marginBottom: 15 }]} onPress={() => setCurrentScreen('profile')}>
               <Text style={{ fontSize: fontSize + 1, color: textColor, fontWeight: '600' }}>👤 Mon Profil & Poids</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.workoutHeroCard, { backgroundColor: '#3B82F6', marginBottom: 15 }]} onPress={() => setCurrentScreen('maxiReps')}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: '#E0E7FF', fontSize: 9, fontWeight: '800', marginBottom: 2 }}>PERFORMANCES</Text>
-                <Text style={{ color: '#FFF', fontSize: 15, fontWeight: 'bold' }}>🏆 Maxi Reps (Polyarticulaires)</Text>
+            {cycles.length > 0 && (
+              <View style={[styles.modernCard, { backgroundColor: cardBg, borderColor: cardBorder, marginBottom: 15 }]}>
+                <Text style={[styles.cardHeaderTitle, { fontSize: fontSize + 1, color: textColor, marginBottom: 8 }]}>🔄 Mes Cycles d'Entraînement</Text>
+                {cycles.map((c) => (
+                  <View key={c.id} style={[styles.cycleItemRow, { borderTopColor: cardBorder }]}>
+                    <TouchableOpacity 
+                      style={{ flex: 1, paddingVertical: 4 }} 
+                      onPress={() => {
+                        setSelectedCycle(c);
+                        setCurrentScreen('workoutList');
+                      }}
+                    >
+                      <Text style={{ color: textColor, fontSize: fontSize, fontWeight: 'bold' }}>👉 {c.name}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => deleteCycle(c.id)}>
+                      <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: 14 }}>🗑️</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
               </View>
-              <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>→</Text>
-            </TouchableOpacity>
+            )}
 
-            <TouchableOpacity style={styles.amrapGlowBtn} onPress={() => setCurrentScreen('amrap')}>
+            <TouchableOpacity style={[styles.amrapGlowBtn, styles.glowEffectBlue]} onPress={() => setCurrentScreen('amrap')}>
               <Text style={styles.amrapEmoji}>⏱️</Text>
               <Text style={styles.amrapText}>MODE AMRAP</Text>
             </TouchableOpacity>
+          </View>
 
-            <TouchableOpacity style={styles.workoutHeroCard} onPress={() => setCurrentScreen('workoutList')}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.heroCardBadge}>PROGRAMME</Text>
-                <Text style={styles.heroCardTitle}>Mes Séances d'Entraînement</Text>
-              </View>
-              <Text style={styles.heroArrow}>→</Text>
+          <View style={styles.bottomFixedActionRow}>
+            <TouchableOpacity style={[styles.bottomCircleBtnLeft, styles.glowEffectBlue]} onPress={() => setCurrentScreen('maxiReps')}>
+              <Text style={{ fontSize: 24 }}>🏆</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.bottomCircleBtnRight, styles.glowEffectGreen]} onPress={addNewCyclePrompt}>
+              <Text style={{ fontSize: 28, color: '#FFF', fontWeight: 'bold' }}>+</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
       )}
 
-      {/* ================= MAXI REPS / POLYARTICULAIRES ================= */}
+      {/* ================= AMRAP ================= */}
+      {currentScreen === 'amrap' && (
+        <ScrollView contentContainerStyle={[styles.scrollContainer, { alignItems: 'center' }]}>
+          <TouchableOpacity style={[styles.backLink, { alignSelf: 'flex-start' }]} onPress={() => setCurrentScreen('home')}>
+            <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Accueil</Text>
+          </TouchableOpacity>
+          <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor, alignSelf: 'flex-start' }]}>Chrono AMRAP</Text>
+
+          <TouchableOpacity 
+            style={[styles.amrapMegaCircle, { backgroundColor: cardBg, borderColor: '#3B82F6' }, styles.glowEffectBlue]} 
+            onPress={() => {
+              if (isAmrapActive) {
+                setAmrapRounds(amrapRounds + 1);
+              }
+            }}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.amrapLabelSmall, { color: subText, fontSize: fontSize - 2 }]}>
+              {isAmrapActive ? '👆 CLIQUE ICI POUR VALIDER UN TOUR' : '⏱️ CLIQUE SUR START POUR LANCER'}
+            </Text>
+            <Text style={[styles.timerDigitsCircle, { fontSize: fontSize + 16, color: textColor }]}>
+              {Math.floor(amrapSeconds / 60)}:{amrapSeconds % 60 < 10 ? '0' : ''}{amrapSeconds % 60}
+            </Text>
+            <Text style={[styles.roundBigNumberCircle, { color: '#10B981', fontSize: fontSize + 24 }]}>
+              {amrapRounds} <Text style={{ fontSize: fontSize, color: subText }}>tours</Text>
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.rowInlineSpace}>
+            <TouchableOpacity 
+              style={[styles.controlBtnCircleLarge, { backgroundColor: isAmrapActive ? '#EF4444' : '#10B981' }]} 
+              onPress={() => setIsAmrapActive(!isAmrapActive)}
+            >
+              <Text style={styles.btnTextLarge}>{isAmrapActive ? 'Pause ⏸️' : 'Start 🚀'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.controlBtnCircleLarge, { backgroundColor: '#6B7280' }]} 
+              onPress={() => { setIsAmrapActive(false); setAmrapSeconds(0); setAmrapRounds(0); }}
+            >
+              <Text style={styles.btnTextLarge}>Reset 🔄</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity style={[styles.finishAmrapBtn, { marginTop: 25 }]} onPress={() => { setIsAmrapActive(false); setCurrentScreen('home'); }}>
+            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: fontSize + 1 }}>Terminer & Enregistrer 🏁</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+
+      {/* ================= MAXI REPS & HISTORIQUE DES MAXI ================= */}
       {currentScreen === 'maxiReps' && (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('home')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Accueil</Text>
           </TouchableOpacity>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-            <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor, marginBottom: 0 }]}>🏆 Maxi Reps</Text>
-            {maxiRepsHistory.length > 0 && (
-              <TouchableOpacity onPress={() => setMaxiRepsHistory([])} style={{ padding: 4 }}>
-                <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: fontSize - 1 }}>🗑️ Tout supprimer</Text>
+            <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor, marginBottom: 0 }]}>🏆 Records (1 Rep)</Text>
+            {Object.keys(maxiRecords).length > 0 && (
+              <TouchableOpacity onPress={() => setMaxiRecords({})} style={{ padding: 4 }}>
+                <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: fontSize - 1 }}>🗑️ Tout effacer</Text>
               </TouchableOpacity>
             )}
           </View>
-          <Text style={{ color: subText, fontSize: fontSize - 1, marginBottom: 15 }}>Suivi de tes mouvements de base et records de force.</Text>
+          <Text style={{ color: subText, fontSize: fontSize - 1, marginBottom: 15 }}>Note et mets à jour tes records de force en 1 rep.</Text>
 
-          {POLYARTICULAR_LIST.map((polyName, idx) => {
-            const matchedRecords = maxiRepsHistory.filter(h => h.exerciseName === polyName);
-            const latestRecord = matchedRecords.length > 0 ? matchedRecords[0].record : 'Aucun record enregistré';
+          {POLYARTICULAR_EXERCISES.map((exName, idx) => {
+            const currentRecord = maxiRecords[exName] || 'Aucun record noté';
 
             return (
-              <View key={idx} style={[styles.modernCard, { backgroundColor: cardBg }]}>
+              <View key={idx} style={[styles.modernCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ fontWeight: 'bold', color: textColor, fontSize: fontSize + 1, marginBottom: 2 }}>{polyName}</Text>
-                    <Text style={{ color: '#3B82F6', fontSize: fontSize - 2, fontWeight: '600' }}>🔥 Record optimal</Text>
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={{ fontWeight: 'bold', color: textColor, fontSize: fontSize + 1, marginBottom: 2 }}>{exName}</Text>
+                    <Text style={{ color: '#3B82F6', fontSize: fontSize - 2, fontWeight: '600' }}>🔥 Record 1 Rep</Text>
                   </View>
-                  <View style={styles.recordBadge}>
-                    <Text style={{ color: '#10B981', fontWeight: 'bold', fontSize: fontSize }}>{latestRecord}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={[styles.recordBadge, { marginRight: 8 }]}>
+                      <Text style={{ color: '#10B981', fontWeight: 'bold', fontSize: fontSize }}>{currentRecord}</Text>
+                    </View>
+                    <TouchableOpacity style={styles.primaryBtn} onPress={() => updateMaxRecordPrompt(exName)}>
+                      <Text style={styles.btnText}>Modifier</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               </View>
             );
           })}
 
-          <Text style={[styles.screenTitle, { fontSize: fontSize + 2, color: textColor, marginTop: 15 }]}>📜 Historique des Maxi Reps</Text>
-          {maxiRepsHistory.map((item) => (
-            <View key={item.id} style={[styles.modernCard, { backgroundColor: cardBg, padding: 10 }]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                <Text style={{ fontWeight: 'bold', color: '#3B82F6', fontSize: fontSize }}>{item.exerciseName}</Text>
-                <Text style={{ color: subText, fontSize: fontSize - 1 }}>{item.date}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 15, marginBottom: 12 }}>
+            <Text style={[styles.screenTitle, { fontSize: fontSize + 2, color: textColor, marginBottom: 0 }]}>📜 Historique des Maxi</Text>
+            {maxiRecordsHistory.length > 0 && (
+              <TouchableOpacity onPress={() => setMaxiRecordsHistory([])} style={{ padding: 4 }}>
+                <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: fontSize - 1 }}>🗑️ Vider l'historique</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {maxiRecordsHistory.length === 0 ? (
+            <Text style={{ color: subText, textAlign: 'center', marginTop: 10 }}>Aucun historique de maxi pour le moment.</Text>
+          ) : (
+            maxiRecordsHistory.map((item) => (
+              <View key={item.id} style={[styles.modernCard, { backgroundColor: cardBg, borderColor: cardBorder, padding: 10 }]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <Text style={{ fontWeight: 'bold', color: '#3B82F6', fontSize: fontSize }}>{item.exerciseName}</Text>
+                  <Text style={{ color: subText, fontSize: fontSize - 1 }}>{item.date}</Text>
+                </View>
+                <Text style={{ color: textColor, fontSize: fontSize - 1 }}>Nouveau record : <Text style={{ fontWeight: 'bold', color: '#10B981' }}>{item.record}</Text></Text>
               </View>
-              <Text style={{ color: textColor, fontSize: fontSize - 1 }}>Record validé : <Text style={{ fontWeight: 'bold', color: '#10B981' }}>{item.record}</Text></Text>
-            </View>
-          ))}
+            ))
+          )}
         </ScrollView>
       )}
 
@@ -424,15 +579,19 @@ export default function App() {
             )}
           </View>
 
-          {globalHistory.map((item) => (
-            <View key={item.id} style={[styles.modernCard, { backgroundColor: cardBg }]}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                <Text style={{ fontWeight: 'bold', color: '#10B981', fontSize: fontSize }}>{item.workoutName}</Text>
-                <Text style={{ color: subText, fontSize: fontSize - 1 }}>{item.date}</Text>
+          {globalHistory.length === 0 ? (
+            <Text style={{ color: subText, textAlign: 'center', marginTop: 20 }}>Aucun historique pour le moment.</Text>
+          ) : (
+            globalHistory.map((item) => (
+              <View key={item.id} style={[styles.modernCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <Text style={{ fontWeight: 'bold', color: '#10B981', fontSize: fontSize }}>{item.workoutName}</Text>
+                  <Text style={{ color: subText, fontSize: fontSize - 1 }}>{item.date}</Text>
+                </View>
+                <Text style={{ color: textColor, fontSize: fontSize - 1 }}>{item.summary}</Text>
               </View>
-              <Text style={{ color: textColor, fontSize: fontSize - 1 }}>{item.summary}</Text>
-            </View>
-          ))}
+            ))
+          )}
         </ScrollView>
       )}
 
@@ -444,11 +603,11 @@ export default function App() {
           </TouchableOpacity>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor }]}>Mon Profil & Poids</Text>
 
-          <View style={[styles.modernCard, { backgroundColor: cardBg }]}>
+          <View style={[styles.modernCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
             <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1 }]}>Poids actuel (kg)</Text>
             <View style={styles.rowInline}>
               <TextInput 
-                style={[styles.modernInput, { flex: 1, backgroundColor: inputBg, color: textColor, fontSize: fontSize }]} 
+                style={[styles.modernInput, { backgroundColor: inputBg, borderColor: cardBorder, color: textColor, fontSize: fontSize, flex: 1 }]} 
                 value={currentWeight} 
                 onChangeText={setCurrentWeight} 
                 keyboardType="numbers-and-punctuation" 
@@ -465,7 +624,7 @@ export default function App() {
               {['Homme', 'Femme'].map((g) => (
                 <TouchableOpacity 
                   key={g} 
-                  style={[styles.genderBtn, gender === g && styles.genderBtnActive]} 
+                  style={[styles.genderBtn, { borderColor: cardBorder }, gender === g && styles.genderBtnActive]} 
                   onPress={() => setGender(g)}
                 >
                   <Text style={[styles.genderBtnText, gender === g && { color: '#FFF' }]}>
@@ -475,7 +634,6 @@ export default function App() {
               ))}
             </View>
 
-            {/* Réglette de taille centimètre par centimètre */}
             <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1, marginTop: 15 }]}>
               Taille (Sélection précise : <Text style={{ color: '#10B981', fontWeight: 'bold' }}>{height}</Text>)
             </Text>
@@ -485,7 +643,7 @@ export default function App() {
                 return (
                   <TouchableOpacity 
                     key={h} 
-                    style={[styles.heightChipPrecise, isSelected && styles.heightChipPreciseActive]} 
+                    style={[styles.heightChipPrecise, { borderColor: cardBorder }, isSelected && styles.heightChipPreciseActive]} 
                     onPress={() => setHeight(h)}
                   >
                     <Text style={[styles.heightChipPreciseText, isSelected && { color: '#FFF', fontWeight: 'bold' }]}>
@@ -497,7 +655,7 @@ export default function App() {
             </ScrollView>
           </View>
 
-          <View style={[styles.modernCard, { backgroundColor: cardBg }]}>
+          <View style={[styles.modernCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <Text style={[styles.cardHeaderTitle, { fontSize: fontSize + 1, color: textColor, marginBottom: 0 }]}>📈 Historique du Poids</Text>
               {weightHistory.length > 0 && (
@@ -507,7 +665,7 @@ export default function App() {
               )}
             </View>
             {weightHistory.map((item) => (
-              <View key={item.id} style={styles.historyLine}>
+              <View key={item.id} style={[styles.historyLine, { borderBottomColor: cardBorder }]}>
                 <Text style={{ color: subText, fontSize: fontSize }}>{item.date}</Text>
                 <Text style={{ color: '#10B981', fontWeight: 'bold', fontSize: fontSize }}>{item.weight} kg</Text>
               </View>
@@ -524,7 +682,7 @@ export default function App() {
           </TouchableOpacity>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor }]}>Réglages</Text>
 
-          <View style={[styles.modernCard, { backgroundColor: cardBg }]}>
+          <View style={[styles.modernCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
             <View style={styles.settingRow}>
               <Text style={{ fontSize: fontSize, color: textColor, fontWeight: '500' }}>Mode Sombre 🌙</Text>
               <Switch value={isDarkMode} onValueChange={setIsDarkMode} />
@@ -540,60 +698,18 @@ export default function App() {
         </ScrollView>
       )}
 
-      {/* ================= AMRAP ================= */}
-      {currentScreen === 'amrap' && (
-        <ScrollView contentContainerStyle={[styles.scrollContainer, { alignItems: 'center' }]}>
-          <TouchableOpacity style={[styles.backLink, { alignSelf: 'flex-start' }]} onPress={() => setCurrentScreen('home')}>
-            <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Accueil</Text>
-          </TouchableOpacity>
-          <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor, alignSelf: 'flex-start' }]}>Chrono AMRAP</Text>
-
-          <View style={[styles.amrapCircleCard, { backgroundColor: cardBg }]}>
-            <Text style={[styles.amrapLabelSmall, { color: subText, fontSize: fontSize - 2 }]}>TEMPS ÉCOULÉ</Text>
-            <Text style={[styles.timerDigitsCircle, { fontSize: fontSize + 16, color: textColor }]}>
-              {Math.floor(amrapSeconds / 60)}:{amrapSeconds % 60 < 10 ? '0' : ''}{amrapSeconds % 60}
-            </Text>
-
-            <View style={styles.rowInlineSpace}>
-              <TouchableOpacity style={[styles.controlBtnCircle, { backgroundColor: isAmrapActive ? '#EF4444' : '#10B981' }]} onPress={() => setIsAmrapActive(!isAmrapActive)}>
-                <Text style={styles.btnText}>{isAmrapActive ? 'Pause' : 'Start'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.controlBtnCircle, { backgroundColor: '#6B7280' }]} onPress={() => { setIsAmrapActive(false); setAmrapSeconds(0); setAmrapRounds(0); }}>
-                <Text style={styles.btnText}>Reset</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <TouchableOpacity style={[styles.roundCircleCard, { backgroundColor: cardBg }]} onPress={() => setAmrapRounds(amrapRounds + 1)}>
-            <Text style={[styles.amrapLabelSmall, { color: subText, fontSize: fontSize - 2 }]}>CLIQUE POUR VALIDER UNE SÉRIE</Text>
-            <Text style={[styles.roundBigNumberCircle, { color: '#10B981' }]}>{amrapRounds}</Text>
-            <Text style={{ color: '#3B82F6', fontWeight: 'bold', fontSize: fontSize }}>+1 Tour / Série</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.finishAmrapBtn} onPress={() => { setIsAmrapActive(false); setCurrentScreen('home'); }}>
-            <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: fontSize + 1 }}>Terminer (Finish) 🏁</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      )}
-
       {/* ================= SÉANCES ================= */}
       {currentScreen === 'workoutList' && (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('home')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Accueil</Text>
           </TouchableOpacity>
-          <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor }]}>Mes Séances</Text>
-
-          <View style={[styles.modernCard, { backgroundColor: cardBg }]}>
-            <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1 }]}>Créer une séance</Text>
-            <View style={styles.rowInline}>
-              <TextInput style={[styles.modernInput, { flex: 1, backgroundColor: inputBg, color: textColor, fontSize: fontSize }]} placeholder="ex: Séance Jambes" placeholderTextColor="#9CA3AF" value={newWorkoutName} onChangeText={setNewWorkoutName} />
-              <TouchableOpacity style={styles.primaryBtn} onPress={addNewWorkout}><Text style={styles.btnText}>Ajouter</Text></TouchableOpacity>
-            </View>
-          </View>
+          <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor }]}>
+            {selectedCycle ? `Séances (${selectedCycle.name})` : 'Mes Séances'}
+          </Text>
 
           {workouts.map((w) => (
-            <View key={w.id} style={[styles.navCardItem, { backgroundColor: cardBg }]}>
+            <View key={w.id} style={[styles.navCardItem, { backgroundColor: cardBg, borderColor: cardBorder }]}>
               <TouchableOpacity style={{ flex: 1 }} onPress={() => { setSelectedWorkout(w); setCurrentScreen('exerciseDetail'); }}>
                 <Text style={{ fontSize: fontSize + 1, fontWeight: 'bold', color: textColor }}>📋 {w.name}</Text>
               </TouchableOpacity>
@@ -602,6 +718,12 @@ export default function App() {
               </TouchableOpacity>
             </View>
           ))}
+
+          <View style={styles.bottomFixedActionSingle}>
+            <TouchableOpacity style={[styles.bottomCircleBtnRight, styles.glowEffectGreen]} onPress={addNewWorkoutPrompt}>
+              <Text style={{ fontSize: 28, color: '#FFF', fontWeight: 'bold' }}>+</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
       )}
 
@@ -613,12 +735,12 @@ export default function App() {
           </TouchableOpacity>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor }]}>{selectedWorkout ? selectedWorkout.name : 'Séance'}</Text>
 
-          <TouchableOpacity style={styles.openLibraryBtn} onPress={() => { setSelectedExItems([]); setActiveLibraryFilter('Tous'); setCurrentScreen('exerciseLibrary'); }}>
+          <TouchableOpacity style={[styles.openLibraryBtn, styles.glowEffectBlue]} onPress={() => { setSelectedExItems([]); setActiveLibraryFilter('Tous'); setCurrentScreen('exerciseLibrary'); }}>
             <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: fontSize }}>+ Sélectionner des exercices 🏋️‍♂️</Text>
           </TouchableOpacity>
 
           {exercises.filter(ex => selectedWorkout && ex.workoutId === selectedWorkout.id).map((ex) => (
-            <View key={ex.id} style={[styles.modernCard, { backgroundColor: cardBg }]}>
+            <View key={ex.id} style={[styles.modernCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                 <View style={{ flex: 1, marginRight: 8 }}>
                   <Text style={[styles.exHeading, { fontSize: fontSize + 2, color: textColor, marginBottom: 2 }]}>{ex.name}</Text>
@@ -633,18 +755,24 @@ export default function App() {
                 <View key={set.id} style={styles.setRowModern}>
                   <Text style={{ width: 22, color: subText, fontWeight: 'bold', fontSize: fontSize - 1 }}>#{index + 1}</Text>
                   
-                  {/* REPS CONTROL (Boutons plus grands) */}
                   <View style={styles.inputGroupControl}>
-                    <TouchableOpacity style={styles.miniAdjustBtn} onPress={() => adjustSetValue(ex.id, set.id, 'reps', -1)}><Text style={styles.miniBtnText}>-</Text></TouchableOpacity>
-                    <TextInput style={[styles.setInputModern, { backgroundColor: inputBg, color: textColor, fontSize: fontSize }]} placeholder="Reps" placeholderTextColor="#9CA3AF" keyboardType="numeric" value={set.reps} onChangeText={(val) => updateSet(ex.id, set.id, 'reps', val)} />
-                    <TouchableOpacity style={styles.miniAdjustBtn} onPress={() => adjustSetValue(ex.id, set.id, 'reps', 1)}><Text style={styles.miniBtnText}>+</Text></TouchableOpacity>
+                    <AnimatedInlineButton style={[styles.miniAdjustBtn, { backgroundColor: inputBg }]} onPress={() => adjustSetValue(ex.id, set.id, 'reps', -1)}>
+                      <Text style={[styles.miniBtnText, { color: textColor }]}>-</Text>
+                    </AnimatedInlineButton>
+                    <TextInput style={[styles.setInputModern, { backgroundColor: inputBg, borderColor: cardBorder, color: textColor, fontSize: fontSize }]} placeholder="Reps" placeholderTextColor="#9CA3AF" keyboardType="numeric" value={set.reps} onChangeText={(val) => updateSet(ex.id, set.id, 'reps', val)} />
+                    <AnimatedInlineButton style={[styles.miniAdjustBtn, { backgroundColor: inputBg }]} onPress={() => adjustSetValue(ex.id, set.id, 'reps', 1)}>
+                      <Text style={[styles.miniBtnText, { color: textColor }]}>+</Text>
+                    </AnimatedInlineButton>
                   </View>
 
-                  {/* WEIGHT CONTROL (Boutons plus grands) */}
                   <View style={styles.inputGroupControl}>
-                    <TouchableOpacity style={styles.miniAdjustBtn} onPress={() => adjustSetValue(ex.id, set.id, 'weight', -2.5)}><Text style={styles.miniBtnText}>-2.5</Text></TouchableOpacity>
-                    <TextInput style={[styles.setInputModern, { backgroundColor: inputBg, color: textColor, fontSize: fontSize }]} placeholder="Poids" placeholderTextColor="#9CA3AF" keyboardType="numbers-and-punctuation" value={set.weight} onChangeText={(val) => updateSet(ex.id, set.id, 'weight', val)} />
-                    <TouchableOpacity style={styles.miniAdjustBtn} onPress={() => adjustSetValue(ex.id, set.id, 'weight', 2.5)}><Text style={styles.miniBtnText}>+2.5</Text></TouchableOpacity>
+                    <AnimatedInlineButton style={[styles.miniAdjustBtn, { backgroundColor: inputBg }]} onPress={() => adjustSetValue(ex.id, set.id, 'weight', -2.5)}>
+                      <Text style={[styles.miniBtnText, { color: textColor }]}>-2.5</Text>
+                    </AnimatedInlineButton>
+                    <TextInput style={[styles.setInputModern, { backgroundColor: inputBg, borderColor: cardBorder, color: textColor, fontSize: fontSize }]} placeholder="Poids" placeholderTextColor="#9CA3AF" keyboardType="numbers-and-punctuation" value={set.weight} onChangeText={(val) => updateSet(ex.id, set.id, 'weight', val)} />
+                    <AnimatedInlineButton style={[styles.miniAdjustBtn, { backgroundColor: inputBg }]} onPress={() => adjustSetValue(ex.id, set.id, 'weight', 2.5)}>
+                      <Text style={[styles.miniBtnText, { color: textColor }]}>+2.5</Text>
+                    </AnimatedInlineButton>
                   </View>
 
                   <TouchableOpacity style={styles.deleteSetIcon} onPress={() => removeSet(ex.id, set.id)}>
@@ -658,7 +786,7 @@ export default function App() {
               </TouchableOpacity>
 
               {ex.history && ex.history.length > 0 && (
-                <View style={styles.historyContainer}>
+                <View style={[styles.historyContainer, { borderTopColor: cardBorder }]}>
                   <Text style={{ fontSize: fontSize - 2, fontWeight: '600', color: subText, marginBottom: 2 }}>📜 Séance précédente :</Text>
                   <Text style={{ fontSize: fontSize - 2, color: subText }}>• {ex.history[0].date} : {ex.history[0].summary}</Text>
                 </View>
@@ -666,7 +794,7 @@ export default function App() {
             </View>
           ))}
 
-          <TouchableOpacity style={styles.finishWorkoutBtn} onPress={finishWorkout}>
+          <TouchableOpacity style={[styles.finishWorkoutBtn, styles.glowEffectGreen]} onPress={finishWorkout}>
             <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: fontSize + 1 }}>Terminer & Enregistrer la séance 🏁</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -687,7 +815,7 @@ export default function App() {
               return (
                 <TouchableOpacity 
                   key={idx} 
-                  style={[styles.muscleCardItem, isActive && styles.muscleCardItemActive]} 
+                  style={[styles.muscleCardItem, { borderColor: cardBorder }, isActive && styles.muscleCardItemActive]} 
                   onPress={() => setActiveLibraryFilter(catName)}
                 >
                   <Text style={{ fontSize: 20, marginBottom: 4 }}>{catName.includes('Dos') ? '🦇' : catName.includes('Biceps') ? '💪' : catName.includes('Pectoraux') ? '🦍' : catName.includes('Jambes') ? '🦵' : catName.includes('Épaules') || catName.includes('Triceps') ? '🦾' : '🔥'}</Text>
@@ -699,10 +827,10 @@ export default function App() {
             })}
           </View>
 
-          <View style={[styles.modernCard, { backgroundColor: cardBg, marginTop: 15 }]}>
+          <View style={[styles.modernCard, { backgroundColor: cardBg, borderColor: cardBorder, marginTop: 15 }]}>
             <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1 }]}>Créer un exercice sur-mesure</Text>
             <TextInput 
-              style={[styles.modernInput, { backgroundColor: inputBg, color: textColor, fontSize: fontSize, marginBottom: 8 }]} 
+              style={[styles.modernInput, { backgroundColor: inputBg, borderColor: cardBorder, color: textColor, fontSize: fontSize, marginBottom: 8 }]} 
               placeholder="Nom de l'exercice" 
               placeholderTextColor="#9CA3AF" 
               value={customExName} 
@@ -716,7 +844,7 @@ export default function App() {
                 return (
                   <TouchableOpacity 
                     key={idx} 
-                    style={[styles.muscleCardSmall, isSelected && styles.muscleCardSmallActive]} 
+                    style={[styles.muscleCardSmall, { borderColor: cardBorder }, isSelected && styles.muscleCardSmallActive]} 
                     onPress={() => setSelectedMuscleCategory(catName)}
                   >
                     <Text style={{ color: isSelected ? '#FFF' : textColor, fontWeight: 'bold', fontSize: fontSize - 2, textAlign: 'center' }}>
@@ -735,26 +863,30 @@ export default function App() {
           {baseExercisesList
             .filter(cat => activeLibraryFilter === 'Tous' || cat.group === activeLibraryFilter)
             .map((cat, idx) => (
-              <View key={idx} style={[styles.modernCard, { backgroundColor: cardBg }]}>
+              <View key={idx} style={[styles.modernCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
                 <Text style={[styles.categoryTitle, { fontSize: fontSize + 2, color: '#3B82F6' }]}>{cat.group}</Text>
-                {cat.exercises.map((exoObj, i) => {
-                  const isSelected = selectedExItems.some(item => item.name === exoObj.name);
-                  return (
-                    <TouchableOpacity key={i} style={[styles.libraryItemMulti, isSelected && { backgroundColor: 'rgba(59, 130, 246, 0.2)', borderRadius: 8, paddingHorizontal: 6 }]} onPress={() => toggleSelectExercise(exoObj)}>
-                      <Text style={{ color: textColor, fontSize: fontSize, fontWeight: isSelected ? 'bold' : 'normal' }}>
-                        {isSelected ? '✅ ' : '• '} {exoObj.name}
-                      </Text>
-                      <Text style={{ color: isSelected ? '#3B82F6' : subText, fontWeight: 'bold', fontSize: fontSize }}>
-                        {isSelected ? 'Sélectionné' : 'Sélectionner'}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                {cat.exercises.length === 0 ? (
+                  <Text style={{ color: subText, fontSize: fontSize - 1, fontStyle: 'italic', paddingVertical: 4 }}>Aucun exercice créé dans cette catégorie.</Text>
+                ) : (
+                  cat.exercises.map((exoObj, i) => {
+                    const isSelected = selectedExItems.some(item => item.name === exoObj.name);
+                    return (
+                      <TouchableOpacity key={i} style={[styles.libraryItemMulti, { borderBottomColor: cardBorder }, isSelected && { backgroundColor: 'rgba(59, 130, 246, 0.15)', borderRadius: 8, paddingHorizontal: 6 }]} onPress={() => toggleSelectExercise(exoObj)}>
+                        <Text style={{ color: textColor, fontSize: fontSize, fontWeight: isSelected ? 'bold' : 'normal' }}>
+                          {isSelected ? '✅ ' : '• '} {exoObj.name}
+                        </Text>
+                        <Text style={{ color: isSelected ? '#3B82F6' : subText, fontWeight: 'bold', fontSize: fontSize }}>
+                          {isSelected ? 'Sélectionné' : 'Sélectionner'}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
               </View>
             ))}
 
           {selectedExItems.length > 0 && (
-            <TouchableOpacity style={styles.validateSelectionBtn} onPress={addSelectedExercisesToWorkout}>
+            <TouchableOpacity style={[styles.validateSelectionBtn, styles.glowEffectBlue]} onPress={addSelectedExercisesToWorkout}>
               <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: fontSize + 1 }}>
                 Valider et ajouter ({selectedExItems.length}) exercice(s) 🚀
               </Text>
@@ -768,104 +900,169 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, width: '100%', height: '100%' },
-  scrollContainer: { padding: 12, paddingBottom: 200, width: '100%', boxSizing: 'border-box' },
+  scrollContainer: { padding: 14, paddingBottom: 150, width: '100%', boxSizing: 'border-box' },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15, width: '100%' },
-  pillButton: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 16, elevation: 2 },
-  pillButtonLarge: { paddingVertical: 12, paddingHorizontal: 20, borderRadius: 20, elevation: 2, width: '100%', alignItems: 'center' },
+  
+  pillButton: { 
+    paddingVertical: 9, 
+    paddingHorizontal: 16, 
+    borderRadius: 18, 
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  pillButtonLarge: { 
+    paddingVertical: 14, 
+    paddingHorizontal: 20, 
+    borderRadius: 20, 
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 3, 
+    width: '100%', 
+    alignItems: 'center' 
+  },
   heroSection: { alignItems: 'center', marginTop: 5, width: '100%' },
-  appTitle: { fontWeight: '800', textAlign: 'center' },
+  appTitle: { fontWeight: '800', textAlign: 'center', letterSpacing: 0.5 },
   appSubtitle: { textAlign: 'center', marginBottom: 20, marginTop: 2 },
+  
+  glowEffectBlue: {
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  glowEffectGreen: {
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+
   amrapGlowBtn: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     backgroundColor: '#3B82F6',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 15,
-    elevation: 5,
+    alignSelf: 'center',
   },
-  amrapEmoji: { fontSize: 28 },
-  amrapText: { color: '#FFF', fontWeight: 'bold', fontSize: 11, marginTop: 2 },
-  workoutHeroCard: {
+  amrapEmoji: { fontSize: 32 },
+  amrapText: { color: '#FFF', fontWeight: 'bold', fontSize: 11, marginTop: 2, letterSpacing: 1 },
+
+  amrapMegaCircle: {
+    width: 250,
+    height: 250,
+    borderRadius: 125,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 25,
+    borderWidth: 2,
+    padding: 15,
+  },
+  controlBtnCircleLarge: { 
+    paddingVertical: 12, 
+    paddingHorizontal: 24, 
+    borderRadius: 12, 
+    marginHorizontal: 6, 
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  btnTextLarge: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
+  
+  bottomFixedActionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1F2937',
-    padding: 15,
-    borderRadius: 14,
+    marginTop: 30,
+    paddingHorizontal: 10,
     width: '100%',
+  },
+  bottomFixedActionSingle: {
+    alignItems: 'flex-end',
+    marginTop: 20,
+    paddingHorizontal: 10,
+    width: '100%',
+  },
+  bottomCircleBtnLeft: {
+    width: 65,
+    height: 65,
+    borderRadius: 32.5,
+    backgroundColor: '#3B82F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bottomCircleBtnRight: {
+    width: 65,
+    height: 65,
+    borderRadius: 32.5,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  backLink: { marginBottom: 10 },
+  screenTitle: { fontWeight: '800', marginBottom: 12, letterSpacing: 0.3 },
+  modernCard: { 
+    padding: 14, 
+    borderRadius: 16, 
+    marginBottom: 14, 
+    width: '100%', 
     borderWidth: 1,
-    borderColor: '#374151',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
     elevation: 3,
   },
-  heroCardBadge: { color: '#10B981', fontSize: 9, fontWeight: '800', marginBottom: 2 },
-  heroCardTitle: { color: '#FFF', fontSize: 14, fontWeight: 'bold' },
-  heroArrow: { color: '#9CA3AF', fontSize: 16, fontWeight: 'bold' },
-  backLink: { marginBottom: 10 },
-  screenTitle: { fontWeight: '800', marginBottom: 12 },
-  modernCard: { padding: 12, borderRadius: 14, marginBottom: 14, width: '100%', elevation: 2 },
-  inputLabel: { marginBottom: 3, fontWeight: '600' },
+  inputLabel: { marginBottom: 4, fontWeight: '600' },
   rowInline: { flexDirection: 'row', alignItems: 'center', width: '100%' },
-  modernInput: { borderWidth: 1, borderColor: '#4B5563', padding: 8, borderRadius: 8, width: '100%' },
-  primaryBtn: { backgroundColor: '#3B82F6', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, marginLeft: 6, justifyContent: 'center' },
-  primaryBtnFull: { backgroundColor: '#3B82F6', padding: 10, borderRadius: 8, alignItems: 'center', width: '100%' },
-  btnText: { color: '#FFF', fontWeight: 'bold' },
+  rowInlineSpace: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', width: '100%', marginBottom: 10 },
+  modernInput: { borderWidth: 1, padding: 10, borderRadius: 10, width: '100%' },
+  primaryBtn: { backgroundColor: '#3B82F6', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, justifyContent: 'center', shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 3, elevation: 2 },
+  primaryBtnFull: { backgroundColor: '#3B82F6', padding: 12, borderRadius: 10, alignItems: 'center', width: '100%', shadowColor: '#3B82F6', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 3, elevation: 2 },
+  btnText: { color: '#FFF', fontWeight: 'bold', fontSize: 12 },
   cardHeaderTitle: { fontWeight: 'bold', marginBottom: 8 },
-  historyLine: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: '#374151', width: '100%' },
+  historyLine: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, width: '100%' },
   settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
-  fontBtn: { backgroundColor: '#3B82F6', width: 34, height: 34, borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginLeft: 6 },
+  fontBtn: { backgroundColor: '#3B82F6', width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginLeft: 6 },
 
-  recordBadge: { backgroundColor: 'rgba(16, 185, 129, 0.1)', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: '#10B981' },
+  recordBadge: { backgroundColor: 'rgba(16, 185, 129, 0.12)', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: '#10B981' },
 
-  // Styles Profil (Sexe & Réglette de taille précise)
-  genderBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#4B5563', alignItems: 'center', marginHorizontal: 3, backgroundColor: 'transparent' },
+  genderBtn: { flex: 1, paddingVertical: 11, borderRadius: 10, borderWidth: 1, alignItems: 'center', marginHorizontal: 4, backgroundColor: 'transparent' },
   genderBtnActive: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' },
   genderBtnText: { color: '#9CA3AF', fontWeight: 'bold' },
   
   heightScrollRow: { flexDirection: 'row', marginTop: 6, marginBottom: 5 },
-  heightChipPrecise: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 6, borderWidth: 1, borderColor: '#4B5563', marginRight: 6, backgroundColor: 'transparent', minWidth: 50, alignItems: 'center' },
+  heightChipPrecise: { paddingVertical: 9, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1, marginRight: 6, backgroundColor: 'transparent', minWidth: 55, alignItems: 'center' },
   heightChipPreciseActive: { backgroundColor: '#10B981', borderColor: '#10B981' },
   heightChipPreciseText: { color: '#9CA3AF', fontSize: 12, fontWeight: '600' },
 
+  cycleItemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, paddingTop: 8, borderTopWidth: 1 },
+
   muscleGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 5 },
-  muscleCardItem: { width: '31%', paddingVertical: 12, paddingHorizontal: 4, borderRadius: 10, borderWidth: 1, borderColor: '#4B5563', marginBottom: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
+  muscleCardItem: { width: '31%', paddingVertical: 12, paddingHorizontal: 4, borderRadius: 12, borderWidth: 1, marginBottom: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
   muscleCardItemActive: { backgroundColor: '#EF4444', borderColor: '#EF4444' },
 
   muscleGridSmall: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 5 },
-  muscleCardSmall: { width: '31%', paddingVertical: 8, paddingHorizontal: 2, borderRadius: 8, borderWidth: 1, borderColor: '#4B5563', marginBottom: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
+  muscleCardSmall: { width: '31%', paddingVertical: 8, paddingHorizontal: 2, borderRadius: 8, borderWidth: 1, marginBottom: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
   muscleCardSmallActive: { backgroundColor: '#EF4444', borderColor: '#EF4444' },
 
-  amrapCircleCard: {
-    width: 210,
-    height: 210,
-    borderRadius: 105,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-    borderWidth: 3,
-    borderColor: '#3B82F6',
-    elevation: 6,
-    padding: 10,
-  },
-  amrapLabelSmall: { fontWeight: '700', letterSpacing: 1, marginBottom: 2 },
-  timerDigitsCircle: { fontWeight: '900', letterSpacing: 1, marginVertical: 4 },
-  controlBtnCircle: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, marginHorizontal: 4 },
-  
-  roundCircleCard: {
-    width: 210,
-    height: 210,
-    borderRadius: 105,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#10B981',
-    elevation: 6,
-    padding: 10,
-    backgroundColor: 'rgba(16, 185, 129, 0.05)',
-    marginBottom: 20,
-  },
-  roundBigNumberCircle: { fontSize: 46, fontWeight: '900', color: '#10B981', marginVertical: 2 },
+  amrapLabelSmall: { fontWeight: '700', letterSpacing: 1, marginBottom: 4, textAlign: 'center' },
+  timerDigitsCircle: { fontWeight: '900', letterSpacing: 1, marginVertical: 4, textAlign: 'center' },
+  roundBigNumberCircle: { fontWeight: '900', marginVertical: 2, textAlign: 'center' },
 
   finishAmrapBtn: {
     backgroundColor: '#EF4444',
@@ -874,22 +1071,40 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     marginBottom: 40,
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
     elevation: 4,
   },
 
-  navCardItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, borderRadius: 14, marginBottom: 10, width: '100%', elevation: 2 },
+  navCardItem: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    padding: 16, 
+    borderRadius: 16, 
+    marginBottom: 12, 
+    width: '100%', 
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 2,
+  },
   deleteIconButton: { padding: 6, justifyContent: 'center', alignItems: 'center' },
   exHeading: { fontWeight: 'bold' },
   
-  setRowModern: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, width: '100%' },
+  setRowModern: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, width: '100%' },
   inputGroupControl: { flexDirection: 'row', alignItems: 'center', flex: 1, marginHorizontal: 2 },
-  setInputModern: { flex: 1, borderWidth: 1, borderColor: '#4B5563', padding: 8, borderRadius: 6, textAlign: 'center', minWidth: 40 },
-  miniAdjustBtn: { backgroundColor: '#374151', paddingHorizontal: 8, paddingVertical: 10, borderRadius: 6, justifyContent: 'center', alignItems: 'center', marginHorizontal: 2 },
-  miniBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 11 },
+  setInputModern: { flex: 1, borderWidth: 1, padding: 8, borderRadius: 8, textAlign: 'center', minWidth: 40 },
+  miniAdjustBtn: { paddingHorizontal: 8, paddingVertical: 10, borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginHorizontal: 2 },
+  miniBtnText: { fontWeight: 'bold', fontSize: 11 },
 
-  deleteSetIcon: { width: 26, alignItems: 'center', justifyContent: 'center' },
-  addSetModernBtn: { marginTop: 4, padding: 10, borderRadius: 8, backgroundColor: 'rgba(16, 185, 129, 0.1)', alignItems: 'center', width: '100%' },
-  historyContainer: { marginTop: 8, paddingTop: 4, borderTopWidth: 1, borderTopColor: '#374151', width: '100%' },
+  deleteSetIcon: { width: 28, alignItems: 'center', justifyContent: 'center' },
+  addSetModernBtn: { marginTop: 4, padding: 10, borderRadius: 10, backgroundColor: 'rgba(16, 185, 129, 0.12)', alignItems: 'center', width: '100%' },
+  historyContainer: { marginTop: 10, paddingTop: 6, borderTopWidth: 1, width: '100%' },
   finishWorkoutBtn: {
     backgroundColor: '#10B981',
     padding: 16,
@@ -897,6 +1112,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     marginBottom: 40,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
     elevation: 4,
   },
   openLibraryBtn: {
@@ -905,7 +1124,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     marginBottom: 14,
-    elevation: 3,
   },
   categoryTitle: { fontWeight: 'bold', marginBottom: 10 },
   libraryItemMulti: {
@@ -914,7 +1132,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#374151',
   },
   validateSelectionBtn: {
     backgroundColor: '#3B82F6',
@@ -922,6 +1139,5 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     marginVertical: 20,
-    elevation: 5,
   },
 });

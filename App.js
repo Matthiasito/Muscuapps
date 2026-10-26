@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -9,48 +9,13 @@ import {
   SafeAreaView,
   StatusBar,
   Switch,
-  Animated,
 } from 'react-native';
-
-// Composant de bouton animé fluide
-const AnimatedButton = ({ onPress, style, children }) => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.95,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 3,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      onPress={onPress}
-    >
-      <Animated.View style={[style, { transform: [{ scale: scaleAnim }] }]}>
-        {children}
-      </Animated.View>
-    </TouchableOpacity>
-  );
-};
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState('home');
   
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [fontSize, setFontSize] = useState(16);
+  const [fontSize, setFontSize] = useState(15); // Taille optimisée pour mobile
 
   const [currentWeight, setCurrentWeight] = useState('75');
   const [gender, setGender] = useState('Homme');
@@ -168,30 +133,30 @@ export default function App() {
       {currentScreen === 'home' && (
         <ScrollView contentContainerStyle={styles.screenContainer}>
           <View style={styles.topBar}>
-            <AnimatedButton style={[styles.pillButton, { backgroundColor: cardBg }]} onPress={() => setCurrentScreen('profile')}>
+            <TouchableOpacity style={[styles.pillButton, { backgroundColor: cardBg }]} onPress={() => setCurrentScreen('profile')}>
               <Text style={{ fontSize: fontSize, color: textColor, fontWeight: '600' }}>👤 Profil</Text>
-            </AnimatedButton>
-            <AnimatedButton style={[styles.pillButton, { backgroundColor: cardBg }]} onPress={() => setCurrentScreen('settings')}>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.pillButton, { backgroundColor: cardBg }]} onPress={() => setCurrentScreen('settings')}>
               <Text style={{ fontSize: fontSize, color: textColor, fontWeight: '600' }}>⚙️ Réglages</Text>
-            </AnimatedButton>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.heroSection}>
             <Text style={[styles.appTitle, { fontSize: fontSize + 10, color: textColor }]}>FitTracker ⚡</Text>
             <Text style={[styles.appSubtitle, { fontSize: fontSize - 1, color: subText }]}>Repousse tes limites aujourd'hui</Text>
 
-            <AnimatedButton style={styles.amrapGlowBtn} onPress={() => setCurrentScreen('amrap')}>
+            <TouchableOpacity style={styles.amrapGlowBtn} onPress={() => setCurrentScreen('amrap')}>
               <Text style={styles.amrapEmoji}>⏱️</Text>
               <Text style={styles.amrapText}>MODE AMRAP</Text>
-            </AnimatedButton>
+            </TouchableOpacity>
 
-            <AnimatedButton style={styles.workoutHeroCard} onPress={() => setCurrentScreen('cyclesList')}>
-              <View>
+            <TouchableOpacity style={styles.workoutHeroCard} onPress={() => setCurrentScreen('cyclesList')}>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.heroCardBadge}>PROGRAMME</Text>
                 <Text style={styles.heroCardTitle}>Gérer mes Cycles & Séances</Text>
               </View>
               <Text style={styles.heroArrow}>→</Text>
-            </AnimatedButton>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       )}
@@ -199,18 +164,18 @@ export default function App() {
       {/* ================= PROFIL ================= */}
       {currentScreen === 'profile' && (
         <ScrollView contentContainerStyle={styles.screenContainer}>
-          <AnimatedButton style={styles.backLink} onPress={() => setCurrentScreen('home')}>
+          <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('home')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Accueil</Text>
-          </AnimatedButton>
+          </TouchableOpacity>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 6, color: textColor }]}>Mon Profil & Poids</Text>
 
           <View style={[styles.modernCard, { backgroundColor: cardBg }]}>
             <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1 }]}>Poids actuel (kg)</Text>
             <View style={styles.rowInline}>
               <TextInput style={[styles.modernInput, { flex: 1, backgroundColor: inputBg, color: textColor, fontSize: fontSize }]} value={currentWeight} onChangeText={setCurrentWeight} keyboardType="numeric" />
-              <AnimatedButton style={styles.primaryBtn} onPress={addWeightRecord}>
+              <TouchableOpacity style={styles.primaryBtn} onPress={addWeightRecord}>
                 <Text style={styles.btnText}>Sauvegarder</Text>
-              </AnimatedButton>
+              </TouchableOpacity>
             </View>
 
             <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1, marginTop: 12 }]}>Sexe & Taille</Text>
@@ -235,21 +200,21 @@ export default function App() {
       {/* ================= PARAMÈTRES ================= */}
       {currentScreen === 'settings' && (
         <ScrollView contentContainerStyle={styles.screenContainer}>
-          <AnimatedButton style={styles.backLink} onPress={() => setCurrentScreen('home')}>
+          <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('home')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Accueil</Text>
-          </AnimatedButton>
+          </TouchableOpacity>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 6, color: textColor }]}>Réglages</Text>
 
           <View style={[styles.modernCard, { backgroundColor: cardBg }]}>
             <View style={styles.settingRow}>
               <Text style={{ fontSize: fontSize, color: textColor, fontWeight: '500' }}>Mode Sombre 🌙</Text>
-              <Switch value={isDarkMode} onValueChange={setIsDarkMode} trackColor={{ false: '#767577', true: '#3B82F6' }} />
+              <Switch value={isDarkMode} onValueChange={setIsDarkMode} />
             </View>
             <View style={[styles.settingRow, { marginTop: 20 }]}>
               <Text style={{ fontSize: fontSize, color: textColor, fontWeight: '500' }}>Taille police ({fontSize}px)</Text>
               <View style={styles.rowInline}>
-                <AnimatedButton style={styles.fontBtn} onPress={() => setFontSize(Math.max(12, fontSize - 2))}><Text style={styles.btnText}>-</Text></AnimatedButton>
-                <AnimatedButton style={styles.fontBtn} onPress={() => setFontSize(Math.min(24, fontSize + 2))}><Text style={styles.btnText}>+</Text></AnimatedButton>
+                <TouchableOpacity style={styles.fontBtn} onPress={() => setFontSize(Math.max(12, fontSize - 2))}><Text style={styles.btnText}>-</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.fontBtn} onPress={() => setFontSize(Math.min(22, fontSize + 2))}><Text style={styles.btnText}>+</Text></TouchableOpacity>
               </View>
             </View>
           </View>
@@ -259,31 +224,29 @@ export default function App() {
       {/* ================= AMRAP ================= */}
       {currentScreen === 'amrap' && (
         <ScrollView contentContainerStyle={styles.screenContainer}>
-          <AnimatedButton style={styles.backLink} onPress={() => setCurrentScreen('home')}>
+          <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('home')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Accueil</Text>
-          </AnimatedButton>
+          </TouchableOpacity>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 6, color: textColor }]}>Chrono AMRAP</Text>
 
           <View style={[styles.modernCard, { backgroundColor: cardBg, alignItems: 'center', paddingVertical: 30 }]}>
-            <Text style={[styles.timerDigits, { fontSize: fontSize + 28, color: textColor }]}>
+            <Text style={[styles.timerDigits, { fontSize: fontSize + 24, color: textColor }]}>
               {Math.floor(amrapSeconds / 60)}:{amrapSeconds % 60 < 10 ? '0' : ''}{amrapSeconds % 60}
             </Text>
 
             <View style={styles.rowInlineSpace}>
-              <AnimatedButton style={[styles.controlBtn, { backgroundColor: isAmrapActive ? '#EF4444' : '#10B981' }]} onPress={() => setIsAmrapActive(!isAmrapActive)}>
+              <TouchableOpacity style={[styles.controlBtn, { backgroundColor: isAmrapActive ? '#EF4444' : '#10B981' }]} onPress={() => setIsAmrapActive(!isAmrapActive)}>
                 <Text style={styles.btnText}>{isAmrapActive ? 'Pause' : 'Démarrer'}</Text>
-              </AnimatedButton>
-              <AnimatedButton style={[styles.controlBtn, { backgroundColor: '#6B7280' }]} onPress={() => { setIsAmrapActive(false); setAmrapSeconds(0); setAmrapRounds(0); }}>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.controlBtn, { backgroundColor: '#6B7280' }]} onPress={() => { setIsAmrapActive(false); setAmrapSeconds(0); setAmrapRounds(0); }}>
                 <Text style={styles.btnText}>Reset</Text>
-              </AnimatedButton>
+              </TouchableOpacity>
             </View>
 
-            <div style={{ height: 1, backgroundColor: isDarkMode ? '#374151' : '#E5E7EB', width: '100%', marginVertical: 20 }} />
-
-            <AnimatedButton style={styles.roundCounterBox} onPress={() => setAmrapRounds(amrapRounds + 1)}>
+            <TouchableOpacity style={styles.roundCounterBox} onPress={() => setAmrapRounds(amrapRounds + 1)}>
               <Text style={styles.roundBigNumber}>{amrapRounds}</Text>
               <Text style={{ color: '#3B82F6', fontWeight: '600', fontSize: fontSize }}>Tours / Séries validés (+1)</Text>
-            </AnimatedButton>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       )}
@@ -291,24 +254,24 @@ export default function App() {
       {/* ================= CYCLES ================= */}
       {currentScreen === 'cyclesList' && (
         <ScrollView contentContainerStyle={styles.screenContainer}>
-          <AnimatedButton style={styles.backLink} onPress={() => setCurrentScreen('home')}>
+          <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('home')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Accueil</Text>
-          </AnimatedButton>
+          </TouchableOpacity>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 6, color: textColor }]}>Mes Cycles d'Entraînement</Text>
 
           <View style={[styles.modernCard, { backgroundColor: cardBg }]}>
             <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1 }]}>Créer un nouveau cycle</Text>
             <View style={styles.rowInline}>
               <TextInput style={[styles.modernInput, { flex: 1, backgroundColor: inputBg, color: textColor, fontSize: fontSize }]} placeholder="ex: Cycle Force" placeholderTextColor="#9CA3AF" value={newCycleName} onChangeText={setNewCycleName} />
-              <AnimatedButton style={styles.primaryBtn} onPress={addNewCycle}><Text style={styles.btnText}>Ajouter</Text></AnimatedButton>
+              <TouchableOpacity style={styles.primaryBtn} onPress={addNewCycle}><Text style={styles.btnText}>Ajouter</Text></TouchableOpacity>
             </View>
           </View>
 
           {cycles.map((c) => (
-            <AnimatedButton key={c.id} style={[styles.navCardItem, { backgroundColor: cardBg }]} onPress={() => { setSelectedCycle(c); setCurrentScreen('workoutList'); }}>
-              <Text style={{ fontSize: fontSize + 2, fontWeight: 'bold', color: textColor }}>🏋️‍♂️ {c.name}</Text>
+            <TouchableOpacity key={c.id} style={[styles.navCardItem, { backgroundColor: cardBg }]} onPress={() => { setSelectedCycle(c); setCurrentScreen('workoutList'); }}>
+              <Text style={{ fontSize: fontSize + 2, fontWeight: 'bold', color: textColor, flex: 1 }}>🏋️‍♂️ {c.name}</Text>
               <Text style={{ color: '#3B82F6', fontWeight: '600' }}>Ouvrir →</Text>
-            </AnimatedButton>
+            </TouchableOpacity>
           ))}
         </ScrollView>
       )}
@@ -316,41 +279,41 @@ export default function App() {
       {/* ================= SÉANCES ================= */}
       {currentScreen === 'workoutList' && (
         <ScrollView contentContainerStyle={styles.screenContainer}>
-          <AnimatedButton style={styles.backLink} onPress={() => setCurrentScreen('cyclesList')}>
+          <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('cyclesList')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Retour aux cycles</Text>
-          </AnimatedButton>
+          </TouchableOpacity>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 6, color: textColor }]}>{selectedCycle ? selectedCycle.name : 'Séances'}</Text>
 
           <View style={[styles.modernCard, { backgroundColor: cardBg }]}>
             <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1 }]}>Créer une nouvelle séance</Text>
             <View style={styles.rowInline}>
               <TextInput style={[styles.modernInput, { flex: 1, backgroundColor: inputBg, color: textColor, fontSize: fontSize }]} placeholder="ex: Séance Dos" placeholderTextColor="#9CA3AF" value={newWorkoutName} onChangeText={setNewWorkoutName} />
-              <AnimatedButton style={styles.primaryBtn} onPress={addNewWorkout}><Text style={styles.btnText}>Ajouter</Text></AnimatedButton>
+              <TouchableOpacity style={styles.primaryBtn} onPress={addNewWorkout}><Text style={styles.btnText}>Ajouter</Text></TouchableOpacity>
             </View>
           </View>
 
           {workouts.filter(w => selectedCycle && w.cycleId === selectedCycle.id).map((w) => (
-            <AnimatedButton key={w.id} style={[styles.navCardItem, { backgroundColor: cardBg }]} onPress={() => { setSelectedWorkout(w); setCurrentScreen('exerciseDetail'); }}>
-              <Text style={{ fontSize: fontSize + 2, fontWeight: 'bold', color: textColor }}>📋 {w.name}</Text>
+            <TouchableOpacity key={w.id} style={[styles.navCardItem, { backgroundColor: cardBg }]} onPress={() => { setSelectedWorkout(w); setCurrentScreen('exerciseDetail'); }}>
+              <Text style={{ fontSize: fontSize + 2, fontWeight: 'bold', color: textColor, flex: 1 }}>📋 {w.name}</Text>
               <Text style={{ color: '#10B981', fontWeight: '600' }}>Commencer →</Text>
-            </AnimatedButton>
+            </TouchableOpacity>
           ))}
         </ScrollView>
       )}
 
-      {/* ================= EXERCICES & PERFS (ESPACE CONFORTABLE) ================= */}
+      {/* ================= EXERCICES & PERFS (RESPONSIVE MOBILE) ================= */}
       {currentScreen === 'exerciseDetail' && (
         <ScrollView contentContainerStyle={[styles.screenContainer, { paddingBottom: 120 }]}>
-          <AnimatedButton style={styles.backLink} onPress={() => setCurrentScreen('workoutList')}>
+          <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('workoutList')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Retour aux séances</Text>
-          </AnimatedButton>
+          </TouchableOpacity>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 6, color: textColor }]}>{selectedWorkout ? selectedWorkout.name : 'Séance'}</Text>
 
           <View style={[styles.modernCard, { backgroundColor: cardBg }]}>
             <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1 }]}>Ajouter un exercice</Text>
             <View style={styles.rowInline}>
               <TextInput style={[styles.modernInput, { flex: 1, backgroundColor: inputBg, color: textColor, fontSize: fontSize }]} placeholder="ex: Développé couché" placeholderTextColor="#9CA3AF" value={newExName} onChangeText={setNewExName} />
-              <AnimatedButton style={styles.primaryBtn} onPress={addNewExercise}><Text style={styles.btnText}>Ajouter</Text></AnimatedButton>
+              <TouchableOpacity style={styles.primaryBtn} onPress={addNewExercise}><Text style={styles.btnText}>Ajouter</Text></TouchableOpacity>
             </View>
           </View>
 
@@ -369,9 +332,9 @@ export default function App() {
                 </View>
               ))}
 
-              <AnimatedButton style={styles.addSetModernBtn} onPress={() => addSet(ex.id)}>
+              <TouchableOpacity style={styles.addSetModernBtn} onPress={() => addSet(ex.id)}>
                 <Text style={{ color: '#10B981', fontWeight: 'bold', fontSize: fontSize - 1 }}>+ Ajouter une série</Text>
-              </AnimatedButton>
+              </TouchableOpacity>
 
               {ex.history && ex.history.length > 0 && (
                 <View style={styles.historyContainer}>
@@ -391,67 +354,61 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  screenContainer: { padding: 20, paddingBottom: 80 },
-  topBar: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25 },
-  pillButton: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
+  screenContainer: { padding: 15, paddingBottom: 80, width: '100%', maxWidth: 500, alignSelf: 'center' },
+  topBar: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  pillButton: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 20, elevation: 2 },
   heroSection: { alignItems: 'center', marginTop: 10 },
-  appTitle: { fontWeight: '800', textAlign: 'center', letterSpacing: 0.5 },
-  appSubtitle: { textAlign: 'center', marginBottom: 30, marginTop: 4 },
+  appTitle: { fontWeight: '800', textAlign: 'center' },
+  appSubtitle: { textAlign: 'center', marginBottom: 25, marginTop: 4 },
   amrapGlowBtn: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
     backgroundColor: '#3B82F6',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 30,
-    shadowColor: '#3B82F6',
-    shadowOpacity: 0.4,
-    shadowRadius: 15,
-    elevation: 8,
+    marginBottom: 25,
+    elevation: 6,
   },
-  amrapEmoji: { fontSize: 32 },
-  amrapText: { color: '#FFF', fontWeight: 'bold', fontSize: 13, marginTop: 4, letterSpacing: 1 },
+  amrapEmoji: { fontSize: 30 },
+  amrapText: { color: '#FFF', fontWeight: 'bold', fontSize: 12, marginTop: 4 },
   workoutHeroCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#1F2937',
-    padding: 20,
-    borderRadius: 20,
+    padding: 18,
+    borderRadius: 16,
     width: '100%',
     borderWidth: 1,
     borderColor: '#374151',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    elevation: 3,
   },
-  heroCardBadge: { color: '#10B981', fontSize: 10, fontWeight: '800', letterSpacing: 1.5, marginBottom: 4 },
-  heroCardTitle: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
-  heroArrow: { color: '#9CA3AF', fontSize: 20, fontWeight: 'bold' },
-  backLink: { marginBottom: 15 },
-  screenTitle: { fontWeight: '800', marginBottom: 20 },
-  modernCard: { padding: 18, borderRadius: 16, marginBottom: 16, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 6, elevation: 3 },
-  inputLabel: { marginBottom: 6, fontWeight: '600' },
-  rowInline: { flexDirection: 'row', alignItems: 'center' },
-  modernInput: { borderWidth: 1, borderColor: '#4B5563', padding: 12, borderRadius: 10 },
-  primaryBtn: { backgroundColor: '#3B82F6', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 10, marginLeft: 10, justifyContent: 'center' },
+  heroCardBadge: { color: '#10B981', fontSize: 10, fontWeight: '800', marginBottom: 2 },
+  heroCardTitle: { color: '#FFF', fontSize: 15, fontWeight: 'bold' },
+  heroArrow: { color: '#9CA3AF', fontSize: 18, fontWeight: 'bold' },
+  backLink: { marginBottom: 12 },
+  screenTitle: { fontWeight: '800', marginBottom: 15 },
+  modernCard: { padding: 15, borderRadius: 14, marginBottom: 14, elevation: 2 },
+  inputLabel: { marginBottom: 4, fontWeight: '600' },
+  rowInline: { flexDirection: 'row', alignItems: 'center', width: '100%' },
+  modernInput: { borderWidth: 1, borderColor: '#4B5563', padding: 10, borderRadius: 8 },
+  primaryBtn: { backgroundColor: '#3B82F6', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8, marginLeft: 8, justifyContent: 'center' },
   btnText: { color: '#FFF', fontWeight: 'bold' },
-  cardHeaderTitle: { fontWeight: 'bold', marginBottom: 12 },
-  historyLine: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#374151' },
+  cardHeaderTitle: { fontWeight: 'bold', marginBottom: 10 },
+  historyLine: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#374151' },
   settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  fontBtn: { backgroundColor: '#3B82F6', width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginLeft: 8 },
+  fontBtn: { backgroundColor: '#3B82F6', width: 36, height: 36, borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginLeft: 8 },
   timerDigits: { fontWeight: '900', letterSpacing: 2, marginVertical: 10 },
-  rowInlineSpace: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginBottom: 10 },
-  controlBtn: { paddingVertical: 12, paddingHorizontal: 30, borderRadius: 12 },
-  roundCounterBox: { backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 2, borderColor: '#3B82F6', borderRadius: 16, padding: 24, alignItems: 'center', width: '100%' },
-  roundBigNumber: { fontSize: 48, fontWeight: '900', color: '#3B82F6' },
-  navCardItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18, borderRadius: 16, marginBottom: 12, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 },
-  exHeading: { fontWeight: 'bold', marginBottom: 12 },
-  setRowModern: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  setInputModern: { flex: 1, borderWidth: 1, borderColor: '#4B5563', padding: 8, borderRadius: 8, marginHorizontal: 4, textAlign: 'center' },
-  deleteSetIcon: { width: 30, alignItems: 'center', justifyContent: 'center' },
-  addSetModernBtn: { marginTop: 6, padding: 12, borderRadius: 10, backgroundColor: 'rgba(16, 185, 129, 0.1)', alignItems: 'center' },
-  historyContainer: { marginTop: 12, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#374151' },
+  rowInlineSpace: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginBottom: 15 },
+  controlBtn: { paddingVertical: 10, paddingHorizontal: 24, borderRadius: 10 },
+  roundCounterBox: { backgroundColor: 'rgba(59, 130, 246, 0.1)', borderWidth: 2, borderColor: '#3B82F6', borderRadius: 14, padding: 20, alignItems: 'center', width: '100%' },
+  roundBigNumber: { fontSize: 42, fontWeight: '900', color: '#3B82F6' },
+  navCardItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderRadius: 14, marginBottom: 10, elevation: 2 },
+  exHeading: { fontWeight: 'bold', marginBottom: 10 },
+  setRowModern: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, width: '100%' },
+  setInputModern: { flex: 1, borderWidth: 1, borderColor: '#4B5563', padding: 8, borderRadius: 6, marginHorizontal: 4, textAlign: 'center' },
+  deleteSetIcon: { width: 28, alignItems: 'center', justifyContent: 'center' },
+  addSetModernBtn: { marginTop: 4, padding: 10, borderRadius: 8, backgroundColor: 'rgba(16, 185, 129, 0.1)', alignItems: 'center' },
+  historyContainer: { marginTop: 10, paddingTop: 6, borderTopWidth: 1, borderTopColor: '#374151' },
 });

@@ -39,50 +39,13 @@ const POLYARTICULAR_EXERCISES = [
   'Développé militaire'
 ];
 
-// Composant de bouton animé avec effet de zoom au clic
-function AnimatedButton({ onPress, style, children, activeOpacity = 0.9 }) {
+// Composant universel de bouton avec animation "Bounce" sur tous les clics
+function BounceButton({ onPress, style, children, activeOpacity = 0.9 }) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
-      toValue: 1.12,
-      useNativeDriver: true,
-      speed: 30,
-      bounciness: 10,
-    }).start();
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      friction: 4,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
-    if (onPress) onPress();
-  };
-
-  return (
-    <TouchableOpacity
-      activeOpacity={activeOpacity}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={{ width: '100%', alignItems: 'center' }}
-    >
-      <Animated.View style={[style, { transform: [{ scale: scaleAnim }], width: '100%', alignItems: 'center' }]}>
-        {children}
-      </Animated.View>
-    </TouchableOpacity>
-  );
-}
-
-// Bouton animé pour les éléments en ligne (comme les + de séries)
-function AnimatedInlineButton({ onPress, style, children }) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1.25,
+      toValue: 1.08,
       useNativeDriver: true,
       speed: 35,
       bounciness: 12,
@@ -101,7 +64,7 @@ function AnimatedInlineButton({ onPress, style, children }) {
 
   return (
     <TouchableOpacity
-      activeOpacity={0.9}
+      activeOpacity={activeOpacity}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
     >
@@ -211,14 +174,22 @@ export default function App() {
   };
 
   const addNewWorkoutPrompt = () => {
+    if (!selectedCycle) return;
     const workoutName = prompt("Nom de la nouvelle séance :");
     if (workoutName && workoutName.trim()) {
-      setWorkouts([...workouts, { id: Date.now().toString(), name: workoutName.trim() }]);
+      setWorkouts([
+        ...workouts,
+        { id: Date.now().toString(), cycleId: selectedCycle.id, name: workoutName.trim() }
+      ]);
     }
   };
 
   const deleteCycle = (cycleId) => {
     setCycles(cycles.filter(c => c.id !== cycleId));
+    const workoutsToRemove = workouts.filter(w => w.cycleId === cycleId);
+    const workoutIds = workoutsToRemove.map(w => w.id);
+    setWorkouts(workouts.filter(w => w.cycleId !== cycleId));
+    setExercises(exercises.filter(e => !workoutIds.includes(e.workoutId)));
   };
 
   const deleteWorkout = (workoutId) => {
@@ -395,30 +366,30 @@ export default function App() {
       {currentScreen === 'home' && (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View style={styles.topBar}>
-            <TouchableOpacity style={[styles.pillButton, { backgroundColor: cardBg, borderColor: cardBorder }]} onPress={() => setCurrentScreen('settings')}>
+            <BounceButton style={[styles.pillButton, { backgroundColor: cardBg, borderColor: cardBorder }]} onPress={() => setCurrentScreen('settings')}>
               <Text style={{ fontSize: fontSize, color: textColor, fontWeight: '600' }}>⚙️ Réglages</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.pillButton, { backgroundColor: cardBg, borderColor: cardBorder }]} onPress={() => setCurrentScreen('globalHistory')}>
+            </BounceButton>
+            <BounceButton style={[styles.pillButton, { backgroundColor: cardBg, borderColor: cardBorder }]} onPress={() => setCurrentScreen('globalHistory')}>
               <Text style={{ fontSize: fontSize, color: textColor, fontWeight: '600' }}>📊 Historique</Text>
-            </TouchableOpacity>
+            </BounceButton>
           </View>
 
           <View style={styles.heroSection}>
-            <AnimatedButton onPress={() => {}}>
+            <BounceButton onPress={() => {}}>
               <Text style={[styles.appTitle, { fontSize: fontSize + 8, color: textColor }]}>FitTracker ⚡</Text>
-            </AnimatedButton>
+            </BounceButton>
             <Text style={[styles.appSubtitle, { fontSize: fontSize - 2, color: subText }]}>Données sauvegardées automatiquement</Text>
 
-            <TouchableOpacity style={[styles.pillButtonLarge, { backgroundColor: cardBg, borderColor: cardBorder, marginBottom: 15 }]} onPress={() => setCurrentScreen('profile')}>
+            <BounceButton style={[styles.pillButtonLarge, { backgroundColor: cardBg, borderColor: cardBorder, marginBottom: 15 }]} onPress={() => setCurrentScreen('profile')}>
               <Text style={{ fontSize: fontSize + 1, color: textColor, fontWeight: '600' }}>👤 Mon Profil & Poids</Text>
-            </TouchableOpacity>
+            </BounceButton>
 
             {cycles.length > 0 && (
               <View style={[styles.modernCard, { backgroundColor: cardBg, borderColor: cardBorder, marginBottom: 15 }]}>
                 <Text style={[styles.cardHeaderTitle, { fontSize: fontSize + 1, color: textColor, marginBottom: 8 }]}>🔄 Mes Cycles d'Entraînement</Text>
                 {cycles.map((c) => (
                   <View key={c.id} style={[styles.cycleItemRow, { borderTopColor: cardBorder }]}>
-                    <TouchableOpacity 
+                    <BounceButton 
                       style={{ flex: 1, paddingVertical: 4 }} 
                       onPress={() => {
                         setSelectedCycle(c);
@@ -426,28 +397,28 @@ export default function App() {
                       }}
                     >
                       <Text style={{ color: textColor, fontSize: fontSize, fontWeight: 'bold' }}>👉 {c.name}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => deleteCycle(c.id)}>
+                    </BounceButton>
+                    <BounceButton style={{ padding: 4 }} onPress={() => deleteCycle(c.id)}>
                       <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: 14 }}>🗑️</Text>
-                    </TouchableOpacity>
+                    </BounceButton>
                   </View>
                 ))}
               </View>
             )}
 
-            <TouchableOpacity style={[styles.amrapGlowBtn, styles.glowEffectBlue]} onPress={() => setCurrentScreen('amrap')}>
+            <BounceButton style={[styles.amrapGlowBtn, styles.glowEffectBlue]} onPress={() => setCurrentScreen('amrap')}>
               <Text style={styles.amrapEmoji}>⏱️</Text>
               <Text style={styles.amrapText}>MODE AMRAP</Text>
-            </TouchableOpacity>
+            </BounceButton>
           </View>
 
           <View style={styles.bottomFixedActionRow}>
-            <TouchableOpacity style={[styles.bottomCircleBtnLeft, styles.glowEffectBlue]} onPress={() => setCurrentScreen('maxiReps')}>
+            <BounceButton style={[styles.bottomCircleBtnLeft, styles.glowEffectBlue]} onPress={() => setCurrentScreen('maxiReps')}>
               <Text style={{ fontSize: 24 }}>🏆</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.bottomCircleBtnRight, styles.glowEffectGreen]} onPress={addNewCyclePrompt}>
+            </BounceButton>
+            <BounceButton style={[styles.bottomCircleBtnRight, styles.glowEffectGreen]} onPress={addNewCyclePrompt}>
               <Text style={{ fontSize: 28, color: '#FFF', fontWeight: 'bold' }}>+</Text>
-            </TouchableOpacity>
+            </BounceButton>
           </View>
         </ScrollView>
       )}
@@ -455,19 +426,18 @@ export default function App() {
       {/* ================= AMRAP ================= */}
       {currentScreen === 'amrap' && (
         <ScrollView contentContainerStyle={[styles.scrollContainer, { alignItems: 'center' }]}>
-          <TouchableOpacity style={[styles.backLink, { alignSelf: 'flex-start' }]} onPress={() => setCurrentScreen('home')}>
+          <BounceButton style={[styles.backLink, { alignSelf: 'flex-start' }]} onPress={() => setCurrentScreen('home')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Accueil</Text>
-          </TouchableOpacity>
+          </BounceButton>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor, alignSelf: 'flex-start' }]}>Chrono AMRAP</Text>
 
-          <TouchableOpacity 
+          <BounceButton 
             style={[styles.amrapMegaCircle, { backgroundColor: cardBg, borderColor: '#3B82F6' }, styles.glowEffectBlue]} 
             onPress={() => {
               if (isAmrapActive) {
                 setAmrapRounds(amrapRounds + 1);
               }
             }}
-            activeOpacity={0.85}
           >
             <Text style={[styles.amrapLabelSmall, { color: subText, fontSize: fontSize - 2 }]}>
               {isAmrapActive ? '👆 CLIQUE ICI POUR VALIDER UN TOUR' : '⏱️ CLIQUE SUR START POUR LANCER'}
@@ -478,41 +448,41 @@ export default function App() {
             <Text style={[styles.roundBigNumberCircle, { color: '#10B981', fontSize: fontSize + 24 }]}>
               {amrapRounds} <Text style={{ fontSize: fontSize, color: subText }}>tours</Text>
             </Text>
-          </TouchableOpacity>
+          </BounceButton>
 
           <View style={styles.rowInlineSpace}>
-            <TouchableOpacity 
+            <BounceButton 
               style={[styles.controlBtnCircleLarge, { backgroundColor: isAmrapActive ? '#EF4444' : '#10B981' }]} 
               onPress={() => setIsAmrapActive(!isAmrapActive)}
             >
               <Text style={styles.btnTextLarge}>{isAmrapActive ? 'Pause ⏸️' : 'Start 🚀'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
+            </BounceButton>
+            <BounceButton 
               style={[styles.controlBtnCircleLarge, { backgroundColor: '#6B7280' }]} 
               onPress={() => { setIsAmrapActive(false); setAmrapSeconds(0); setAmrapRounds(0); }}
             >
               <Text style={styles.btnTextLarge}>Reset 🔄</Text>
-            </TouchableOpacity>
+            </BounceButton>
           </View>
 
-          <TouchableOpacity style={[styles.finishAmrapBtn, { marginTop: 25 }]} onPress={() => { setIsAmrapActive(false); setCurrentScreen('home'); }}>
+          <BounceButton style={[styles.finishAmrapBtn, { marginTop: 25 }]} onPress={() => { setIsAmrapActive(false); setCurrentScreen('home'); }}>
             <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: fontSize + 1 }}>Terminer & Enregistrer 🏁</Text>
-          </TouchableOpacity>
+          </BounceButton>
         </ScrollView>
       )}
 
       {/* ================= MAXI REPS & HISTORIQUE DES MAXI ================= */}
       {currentScreen === 'maxiReps' && (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('home')}>
+          <BounceButton style={styles.backLink} onPress={() => setCurrentScreen('home')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Accueil</Text>
-          </TouchableOpacity>
+          </BounceButton>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor, marginBottom: 0 }]}>🏆 Records (1 Rep)</Text>
             {Object.keys(maxiRecords).length > 0 && (
-              <TouchableOpacity onPress={() => setMaxiRecords({})} style={{ padding: 4 }}>
+              <BounceButton onPress={() => setMaxiRecords({})} style={{ padding: 4 }}>
                 <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: fontSize - 1 }}>🗑️ Tout effacer</Text>
-              </TouchableOpacity>
+              </BounceButton>
             )}
           </View>
           <Text style={{ color: subText, fontSize: fontSize - 1, marginBottom: 15 }}>Note et mets à jour tes records de force en 1 rep.</Text>
@@ -531,9 +501,9 @@ export default function App() {
                     <View style={[styles.recordBadge, { marginRight: 8 }]}>
                       <Text style={{ color: '#10B981', fontWeight: 'bold', fontSize: fontSize }}>{currentRecord}</Text>
                     </View>
-                    <TouchableOpacity style={styles.primaryBtn} onPress={() => updateMaxRecordPrompt(exName)}>
+                    <BounceButton style={styles.primaryBtn} onPress={() => updateMaxRecordPrompt(exName)}>
                       <Text style={styles.btnText}>Modifier</Text>
-                    </TouchableOpacity>
+                    </BounceButton>
                   </View>
                 </View>
               </View>
@@ -543,9 +513,9 @@ export default function App() {
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 15, marginBottom: 12 }}>
             <Text style={[styles.screenTitle, { fontSize: fontSize + 2, color: textColor, marginBottom: 0 }]}>📜 Historique des Maxi</Text>
             {maxiRecordsHistory.length > 0 && (
-              <TouchableOpacity onPress={() => setMaxiRecordsHistory([])} style={{ padding: 4 }}>
+              <BounceButton onPress={() => setMaxiRecordsHistory([])} style={{ padding: 4 }}>
                 <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: fontSize - 1 }}>🗑️ Vider l'historique</Text>
-              </TouchableOpacity>
+              </BounceButton>
             )}
           </View>
           {maxiRecordsHistory.length === 0 ? (
@@ -567,15 +537,15 @@ export default function App() {
       {/* ================= HISTORIQUE GLOBAL ================= */}
       {currentScreen === 'globalHistory' && (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('home')}>
+          <BounceButton style={styles.backLink} onPress={() => setCurrentScreen('home')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Accueil</Text>
-          </TouchableOpacity>
+          </BounceButton>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor, marginBottom: 0 }]}>Historique Global</Text>
             {globalHistory.length > 0 && (
-              <TouchableOpacity onPress={() => setGlobalHistory([])} style={{ padding: 4 }}>
+              <BounceButton onPress={() => setGlobalHistory([])} style={{ padding: 4 }}>
                 <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: fontSize - 1 }}>🗑️ Tout supprimer</Text>
-              </TouchableOpacity>
+              </BounceButton>
             )}
           </View>
 
@@ -598,9 +568,9 @@ export default function App() {
       {/* ================= PROFIL ================= */}
       {currentScreen === 'profile' && (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('home')}>
+          <BounceButton style={styles.backLink} onPress={() => setCurrentScreen('home')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Accueil</Text>
-          </TouchableOpacity>
+          </BounceButton>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor }]}>Mon Profil & Poids</Text>
 
           <View style={[styles.modernCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
@@ -614,15 +584,15 @@ export default function App() {
                 placeholder="64.8"
                 placeholderTextColor="#9CA3AF"
               />
-              <TouchableOpacity style={styles.primaryBtn} onPress={addWeightRecord}>
+              <BounceButton style={styles.primaryBtn} onPress={addWeightRecord}>
                 <Text style={styles.btnText}>Sauvegarder</Text>
-              </TouchableOpacity>
+              </BounceButton>
             </View>
 
             <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1, marginTop: 15 }]}>Sexe</Text>
             <View style={styles.rowInline}>
               {['Homme', 'Femme'].map((g) => (
-                <TouchableOpacity 
+                <BounceButton 
                   key={g} 
                   style={[styles.genderBtn, { borderColor: cardBorder }, gender === g && styles.genderBtnActive]} 
                   onPress={() => setGender(g)}
@@ -630,7 +600,7 @@ export default function App() {
                   <Text style={[styles.genderBtnText, gender === g && { color: '#FFF' }]}>
                     {g === 'Homme' ? '👨 Homme' : '👩 Femme'}
                   </Text>
-                </TouchableOpacity>
+                </BounceButton>
               ))}
             </View>
 
@@ -641,7 +611,7 @@ export default function App() {
               {HEIGHT_OPTIONS.map((h) => {
                 const isSelected = height === h;
                 return (
-                  <TouchableOpacity 
+                  <BounceButton 
                     key={h} 
                     style={[styles.heightChipPrecise, { borderColor: cardBorder }, isSelected && styles.heightChipPreciseActive]} 
                     onPress={() => setHeight(h)}
@@ -649,7 +619,7 @@ export default function App() {
                     <Text style={[styles.heightChipPreciseText, isSelected && { color: '#FFF', fontWeight: 'bold' }]}>
                       {h}
                     </Text>
-                  </TouchableOpacity>
+                  </BounceButton>
                 );
               })}
             </ScrollView>
@@ -659,9 +629,9 @@ export default function App() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <Text style={[styles.cardHeaderTitle, { fontSize: fontSize + 1, color: textColor, marginBottom: 0 }]}>📈 Historique du Poids</Text>
               {weightHistory.length > 0 && (
-                <TouchableOpacity onPress={() => setWeightHistory([])}>
+                <BounceButton onPress={() => setWeightHistory([])}>
                   <Text style={{ color: '#EF4444', fontSize: fontSize - 2, fontWeight: 'bold' }}>Effacer</Text>
-                </TouchableOpacity>
+                </BounceButton>
               )}
             </View>
             {weightHistory.map((item) => (
@@ -677,9 +647,9 @@ export default function App() {
       {/* ================= PARAMÈTRES ================= */}
       {currentScreen === 'settings' && (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('home')}>
+          <BounceButton style={styles.backLink} onPress={() => setCurrentScreen('home')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Accueil</Text>
-          </TouchableOpacity>
+          </BounceButton>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor }]}>Réglages</Text>
 
           <View style={[styles.modernCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
@@ -690,39 +660,45 @@ export default function App() {
             <View style={[styles.settingRow, { marginTop: 15 }]}>
               <Text style={{ fontSize: fontSize, color: textColor, fontWeight: '500' }}>Taille police ({fontSize}px)</Text>
               <View style={styles.rowInline}>
-                <TouchableOpacity style={styles.fontBtn} onPress={() => setFontSize(Math.max(10, fontSize - 2))}><Text style={styles.btnText}>-</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.fontBtn} onPress={() => setFontSize(Math.min(18, fontSize + 2))}><Text style={styles.btnText}>+</Text></TouchableOpacity>
+                <BounceButton style={styles.fontBtn} onPress={() => setFontSize(Math.max(10, fontSize - 2))}><Text style={styles.btnText}>-</Text></BounceButton>
+                <BounceButton style={styles.fontBtn} onPress={() => setFontSize(Math.min(18, fontSize + 2))}><Text style={styles.btnText}>+</Text></BounceButton>
               </View>
             </View>
           </View>
         </ScrollView>
       )}
 
-      {/* ================= SÉANCES ================= */}
+      {/* ================= SÉANCES (FILTRÉES PAR CYCLE) ================= */}
       {currentScreen === 'workoutList' && (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('home')}>
+          <BounceButton style={styles.backLink} onPress={() => setCurrentScreen('home')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Accueil</Text>
-          </TouchableOpacity>
+          </BounceButton>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor }]}>
             {selectedCycle ? `Séances (${selectedCycle.name})` : 'Mes Séances'}
           </Text>
 
-          {workouts.map((w) => (
-            <View key={w.id} style={[styles.navCardItem, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-              <TouchableOpacity style={{ flex: 1 }} onPress={() => { setSelectedWorkout(w); setCurrentScreen('exerciseDetail'); }}>
-                <Text style={{ fontSize: fontSize + 1, fontWeight: 'bold', color: textColor }}>📋 {w.name}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => deleteWorkout(w.id)} style={styles.deleteIconButton}>
-                <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: 16 }}>🗑️</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+          {workouts.filter(w => selectedCycle && w.cycleId === selectedCycle.id).length === 0 ? (
+            <Text style={{ color: subText, textAlign: 'center', marginVertical: 20 }}>Aucune séance pour ce cycle. Crée-en une avec le bouton + en bas !</Text>
+          ) : (
+            workouts
+              .filter(w => selectedCycle && w.cycleId === selectedCycle.id)
+              .map((w) => (
+                <View key={w.id} style={[styles.navCardItem, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+                  <BounceButton style={{ flex: 1 }} onPress={() => { setSelectedWorkout(w); setCurrentScreen('exerciseDetail'); }}>
+                    <Text style={{ fontSize: fontSize + 1, fontWeight: 'bold', color: textColor }}>📋 {w.name}</Text>
+                  </BounceButton>
+                  <BounceButton onPress={() => deleteWorkout(w.id)} style={styles.deleteIconButton}>
+                    <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: 16 }}>🗑️</Text>
+                  </BounceButton>
+                </View>
+              ))
+          )}
 
           <View style={styles.bottomFixedActionSingle}>
-            <TouchableOpacity style={[styles.bottomCircleBtnRight, styles.glowEffectGreen]} onPress={addNewWorkoutPrompt}>
+            <BounceButton style={[styles.bottomCircleBtnRight, styles.glowEffectGreen]} onPress={addNewWorkoutPrompt}>
               <Text style={{ fontSize: 28, color: '#FFF', fontWeight: 'bold' }}>+</Text>
-            </TouchableOpacity>
+            </BounceButton>
           </View>
         </ScrollView>
       )}
@@ -730,14 +706,14 @@ export default function App() {
       {/* ================= EXERCICES DE LA SÉANCE ================= */}
       {currentScreen === 'exerciseDetail' && (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('workoutList')}>
+          <BounceButton style={styles.backLink} onPress={() => setCurrentScreen('workoutList')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Retour aux séances</Text>
-          </TouchableOpacity>
+          </BounceButton>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor }]}>{selectedWorkout ? selectedWorkout.name : 'Séance'}</Text>
 
-          <TouchableOpacity style={[styles.openLibraryBtn, styles.glowEffectBlue]} onPress={() => { setSelectedExItems([]); setActiveLibraryFilter('Tous'); setCurrentScreen('exerciseLibrary'); }}>
+          <BounceButton style={[styles.openLibraryBtn, styles.glowEffectBlue]} onPress={() => { setSelectedExItems([]); setActiveLibraryFilter('Tous'); setCurrentScreen('exerciseLibrary'); }}>
             <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: fontSize }}>+ Sélectionner des exercices 🏋️‍♂️</Text>
-          </TouchableOpacity>
+          </BounceButton>
 
           {exercises.filter(ex => selectedWorkout && ex.workoutId === selectedWorkout.id).map((ex) => (
             <View key={ex.id} style={[styles.modernCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
@@ -746,9 +722,9 @@ export default function App() {
                   <Text style={[styles.exHeading, { fontSize: fontSize + 2, color: textColor, marginBottom: 2 }]}>{ex.name}</Text>
                   <Text style={{ fontSize: fontSize - 2, color: '#3B82F6', fontWeight: '600' }}>Muscle : {ex.muscle}</Text>
                 </View>
-                <TouchableOpacity onPress={() => deleteExercise(ex.id)} style={{ padding: 4 }}>
+                <BounceButton onPress={() => deleteExercise(ex.id)} style={{ padding: 4 }}>
                   <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: 14 }}>🗑️ Supprimer</Text>
-                </TouchableOpacity>
+                </BounceButton>
               </View>
 
               {ex.sets.map((set, index) => (
@@ -756,34 +732,34 @@ export default function App() {
                   <Text style={{ width: 22, color: subText, fontWeight: 'bold', fontSize: fontSize - 1 }}>#{index + 1}</Text>
                   
                   <View style={styles.inputGroupControl}>
-                    <AnimatedInlineButton style={[styles.miniAdjustBtn, { backgroundColor: inputBg }]} onPress={() => adjustSetValue(ex.id, set.id, 'reps', -1)}>
+                    <BounceButton style={[styles.miniAdjustBtn, { backgroundColor: inputBg }]} onPress={() => adjustSetValue(ex.id, set.id, 'reps', -1)}>
                       <Text style={[styles.miniBtnText, { color: textColor }]}>-</Text>
-                    </AnimatedInlineButton>
+                    </BounceButton>
                     <TextInput style={[styles.setInputModern, { backgroundColor: inputBg, borderColor: cardBorder, color: textColor, fontSize: fontSize }]} placeholder="Reps" placeholderTextColor="#9CA3AF" keyboardType="numeric" value={set.reps} onChangeText={(val) => updateSet(ex.id, set.id, 'reps', val)} />
-                    <AnimatedInlineButton style={[styles.miniAdjustBtn, { backgroundColor: inputBg }]} onPress={() => adjustSetValue(ex.id, set.id, 'reps', 1)}>
+                    <BounceButton style={[styles.miniAdjustBtn, { backgroundColor: inputBg }]} onPress={() => adjustSetValue(ex.id, set.id, 'reps', 1)}>
                       <Text style={[styles.miniBtnText, { color: textColor }]}>+</Text>
-                    </AnimatedInlineButton>
+                    </BounceButton>
                   </View>
 
                   <View style={styles.inputGroupControl}>
-                    <AnimatedInlineButton style={[styles.miniAdjustBtn, { backgroundColor: inputBg }]} onPress={() => adjustSetValue(ex.id, set.id, 'weight', -2.5)}>
+                    <BounceButton style={[styles.miniAdjustBtn, { backgroundColor: inputBg }]} onPress={() => adjustSetValue(ex.id, set.id, 'weight', -2.5)}>
                       <Text style={[styles.miniBtnText, { color: textColor }]}>-2.5</Text>
-                    </AnimatedInlineButton>
+                    </BounceButton>
                     <TextInput style={[styles.setInputModern, { backgroundColor: inputBg, borderColor: cardBorder, color: textColor, fontSize: fontSize }]} placeholder="Poids" placeholderTextColor="#9CA3AF" keyboardType="numbers-and-punctuation" value={set.weight} onChangeText={(val) => updateSet(ex.id, set.id, 'weight', val)} />
-                    <AnimatedInlineButton style={[styles.miniAdjustBtn, { backgroundColor: inputBg }]} onPress={() => adjustSetValue(ex.id, set.id, 'weight', 2.5)}>
+                    <BounceButton style={[styles.miniAdjustBtn, { backgroundColor: inputBg }]} onPress={() => adjustSetValue(ex.id, set.id, 'weight', 2.5)}>
                       <Text style={[styles.miniBtnText, { color: textColor }]}>+2.5</Text>
-                    </AnimatedInlineButton>
+                    </BounceButton>
                   </View>
 
-                  <TouchableOpacity style={styles.deleteSetIcon} onPress={() => removeSet(ex.id, set.id)}>
+                  <BounceButton style={styles.deleteSetIcon} onPress={() => removeSet(ex.id, set.id)}>
                     <Text style={{ color: '#EF4444', fontWeight: 'bold' }}>✕</Text>
-                  </TouchableOpacity>
+                  </BounceButton>
                 </View>
               ))}
 
-              <TouchableOpacity style={styles.addSetModernBtn} onPress={() => addSet(ex.id)}>
+              <BounceButton style={styles.addSetModernBtn} onPress={() => addSet(ex.id)}>
                 <Text style={{ color: '#10B981', fontWeight: 'bold', fontSize: fontSize - 1 }}>+ Ajouter une série</Text>
-              </TouchableOpacity>
+              </BounceButton>
 
               {ex.history && ex.history.length > 0 && (
                 <View style={[styles.historyContainer, { borderTopColor: cardBorder }]}>
@@ -794,18 +770,18 @@ export default function App() {
             </View>
           ))}
 
-          <TouchableOpacity style={[styles.finishWorkoutBtn, styles.glowEffectGreen]} onPress={finishWorkout}>
+          <BounceButton style={[styles.finishWorkoutBtn, styles.glowEffectGreen]} onPress={finishWorkout}>
             <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: fontSize + 1 }}>Terminer & Enregistrer la séance 🏁</Text>
-          </TouchableOpacity>
+          </BounceButton>
         </ScrollView>
       )}
 
       {/* ================= BIBLIOTHÈQUE ================= */}
       {currentScreen === 'exerciseLibrary' && (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-          <TouchableOpacity style={styles.backLink} onPress={() => setCurrentScreen('exerciseDetail')}>
+          <BounceButton style={styles.backLink} onPress={() => setCurrentScreen('exerciseDetail')}>
             <Text style={{ fontSize: fontSize, color: '#3B82F6', fontWeight: '600' }}>← Retour à la séance</Text>
-          </TouchableOpacity>
+          </BounceButton>
           <Text style={[styles.screenTitle, { fontSize: fontSize + 5, color: textColor }]}>Sélectionner les Exercices 📋</Text>
 
           <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1, marginBottom: 8 }]}>Filtrer par groupe musculaire :</Text>
@@ -813,7 +789,7 @@ export default function App() {
             {MUSCLE_CATEGORIES.map((catName, idx) => {
               const isActive = activeLibraryFilter === catName;
               return (
-                <TouchableOpacity 
+                <BounceButton 
                   key={idx} 
                   style={[styles.muscleCardItem, { borderColor: cardBorder }, isActive && styles.muscleCardItemActive]} 
                   onPress={() => setActiveLibraryFilter(catName)}
@@ -822,7 +798,7 @@ export default function App() {
                   <Text style={{ color: isActive ? '#FFF' : textColor, fontWeight: 'bold', fontSize: fontSize - 1, textAlign: 'center' }}>
                     {catName}
                   </Text>
-                </TouchableOpacity>
+                </BounceButton>
               );
             })}
           </View>
@@ -842,7 +818,7 @@ export default function App() {
               {MUSCLE_CATEGORIES.filter(c => c !== 'Tous').map((catName, idx) => {
                 const isSelected = selectedMuscleCategory === catName;
                 return (
-                  <TouchableOpacity 
+                  <BounceButton 
                     key={idx} 
                     style={[styles.muscleCardSmall, { borderColor: cardBorder }, isSelected && styles.muscleCardSmallActive]} 
                     onPress={() => setSelectedMuscleCategory(catName)}
@@ -850,14 +826,14 @@ export default function App() {
                     <Text style={{ color: isSelected ? '#FFF' : textColor, fontWeight: 'bold', fontSize: fontSize - 2, textAlign: 'center' }}>
                       {catName}
                     </Text>
-                  </TouchableOpacity>
+                  </BounceButton>
                 );
               })}
             </View>
 
-            <TouchableOpacity style={[styles.primaryBtnFull, { marginTop: 10 }]} onPress={createCustomExercise}>
+            <BounceButton style={[styles.primaryBtnFull, { marginTop: 10 }]} onPress={createCustomExercise}>
               <Text style={styles.btnText}>Créer et ajouter</Text>
-            </TouchableOpacity>
+            </BounceButton>
           </View>
 
           {baseExercisesList
@@ -871,14 +847,16 @@ export default function App() {
                   cat.exercises.map((exoObj, i) => {
                     const isSelected = selectedExItems.some(item => item.name === exoObj.name);
                     return (
-                      <TouchableOpacity key={i} style={[styles.libraryItemMulti, { borderBottomColor: cardBorder }, isSelected && { backgroundColor: 'rgba(59, 130, 246, 0.15)', borderRadius: 8, paddingHorizontal: 6 }]} onPress={() => toggleSelectExercise(exoObj)}>
-                        <Text style={{ color: textColor, fontSize: fontSize, fontWeight: isSelected ? 'bold' : 'normal' }}>
-                          {isSelected ? '✅ ' : '• '} {exoObj.name}
-                        </Text>
-                        <Text style={{ color: isSelected ? '#3B82F6' : subText, fontWeight: 'bold', fontSize: fontSize }}>
-                          {isSelected ? 'Sélectionné' : 'Sélectionner'}
-                        </Text>
-                      </TouchableOpacity>
+                      <BounceButton key={i} style={[styles.libraryItemMulti, { borderBottomColor: cardBorder }, isSelected && { backgroundColor: 'rgba(59, 130, 246, 0.15)', borderRadius: 8, paddingHorizontal: 6 }]} onPress={() => toggleSelectExercise(exoObj)}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                          <Text style={{ color: textColor, fontSize: fontSize, fontWeight: isSelected ? 'bold' : 'normal' }}>
+                            {isSelected ? '✅ ' : '• '} {exoObj.name}
+                          </Text>
+                          <Text style={{ color: isSelected ? '#3B82F6' : subText, fontWeight: 'bold', fontSize: fontSize }}>
+                            {isSelected ? 'Sélectionné' : 'Sélectionner'}
+                          </Text>
+                        </View>
+                      </BounceButton>
                     );
                   })
                 )}
@@ -886,11 +864,11 @@ export default function App() {
             ))}
 
           {selectedExItems.length > 0 && (
-            <TouchableOpacity style={[styles.validateSelectionBtn, styles.glowEffectBlue]} onPress={addSelectedExercisesToWorkout}>
+            <BounceButton style={[styles.validateSelectionBtn, styles.glowEffectBlue]} onPress={addSelectedExercisesToWorkout}>
               <Text style={{ color: '#FFF', fontWeight: 'bold', fontSize: fontSize + 1 }}>
                 Valider et ajouter ({selectedExItems.length}) exercice(s) 🚀
               </Text>
-            </TouchableOpacity>
+            </BounceButton>
           )}
         </ScrollView>
       )}

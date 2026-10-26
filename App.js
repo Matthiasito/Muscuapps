@@ -22,6 +22,14 @@ const INITIAL_BASE_EXERCISES = [
 
 const MUSCLE_CATEGORIES = ['Tous', 'Dos 🦇', 'Biceps 💪', 'Pectoraux 🦍', 'Jambes 🦵', 'Épaules 🦾', 'Triceps 🦾'];
 
+// Génération automatique de 1m40 à 2m00 centimètre par centimètre pour un choix ultra précis
+const HEIGHT_OPTIONS = [];
+for (let cm = 140; cm <= 200; cm++) {
+  const meters = Math.floor(cm / 100);
+  const centimeters = cm % 100;
+  HEIGHT_OPTIONS.push(`${meters}m${centimeters < 10 ? '0' : ''}${centimeters}`);
+}
+
 const POLYARTICULAR_LIST = [
   'Développé couché',
   'Développé incliné',
@@ -36,7 +44,7 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [fontSize, setFontSize] = useState(13);
 
-  const [currentWeight, setCurrentWeight] = useState('75');
+  const [currentWeight, setCurrentWeight] = useState('75.0');
   const [gender, setGender] = useState('Homme');
   const [height, setHeight] = useState('1m78');
   const [weightHistory, setWeightHistory] = useState([
@@ -99,6 +107,8 @@ export default function App() {
       const savedBaseEx = localStorage.getItem('fit_base_ex_list');
       const savedMaxiHist = localStorage.getItem('fit_maxi_reps_hist');
       const savedDarkMode = localStorage.getItem('fit_dark_mode');
+      const savedProfileGender = localStorage.getItem('fit_gender');
+      const savedProfileHeight = localStorage.getItem('fit_height');
       
       if (savedWorkouts) setWorkouts(JSON.parse(savedWorkouts));
       if (savedExercises) setExercises(JSON.parse(savedExercises));
@@ -107,6 +117,8 @@ export default function App() {
       if (savedBaseEx) setBaseExercisesList(JSON.parse(savedBaseEx));
       if (savedMaxiHist) setMaxiRepsHistory(JSON.parse(savedMaxiHist));
       if (savedDarkMode !== null) setIsDarkMode(JSON.parse(savedDarkMode));
+      if (savedProfileGender) setGender(savedProfileGender);
+      if (savedProfileHeight) setHeight(savedProfileHeight);
     } catch (e) {
       console.log('Erreur chargement stockage', e);
     }
@@ -121,10 +133,12 @@ export default function App() {
       localStorage.setItem('fit_base_ex_list', JSON.stringify(baseExercisesList));
       localStorage.setItem('fit_maxi_reps_hist', JSON.stringify(maxiRepsHistory));
       localStorage.setItem('fit_dark_mode', JSON.stringify(isDarkMode));
+      localStorage.setItem('fit_gender', gender);
+      localStorage.setItem('fit_height', height);
     } catch (e) {
       console.log('Erreur sauvegarde stockage', e);
     }
-  }, [workouts, exercises, weightHistory, globalHistory, baseExercisesList, maxiRepsHistory, isDarkMode]);
+  }, [workouts, exercises, weightHistory, globalHistory, baseExercisesList, maxiRepsHistory, isDarkMode, gender, height]);
 
   const deleteWorkout = (workoutId) => {
     setWorkouts(workouts.filter(w => w.id !== workoutId));
@@ -224,7 +238,6 @@ export default function App() {
     }));
   };
 
-  // Incrémentation rapide (+ / -) pour une ergonomie maximale à la salle
   const adjustSetValue = (exId, setId, field, amount) => {
     setExercises(exercises.map(ex => {
       if (ex.id === exId) {
@@ -234,7 +247,7 @@ export default function App() {
             if (s.id === setId) {
               const currentVal = parseFloat(s[field]) || 0;
               const newVal = Math.max(0, currentVal + amount);
-              return { ...s, [field]: newVal.toString() };
+              return { ...s, [field]: field === 'weight' ? newVal.toFixed(1) : newVal.toString() };
             }
             return s;
           })
@@ -434,17 +447,54 @@ export default function App() {
           <View style={[styles.modernCard, { backgroundColor: cardBg }]}>
             <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1 }]}>Poids actuel (kg)</Text>
             <View style={styles.rowInline}>
-              <TextInput style={[styles.modernInput, { flex: 1, backgroundColor: inputBg, color: textColor, fontSize: fontSize }]} value={currentWeight} onChangeText={setCurrentWeight} keyboardType="numeric" />
+              <TextInput 
+                style={[styles.modernInput, { flex: 1, backgroundColor: inputBg, color: textColor, fontSize: fontSize }]} 
+                value={currentWeight} 
+                onChangeText={setCurrentWeight} 
+                keyboardType="numbers-and-punctuation" 
+                placeholder="64.8"
+                placeholderTextColor="#9CA3AF"
+              />
               <TouchableOpacity style={styles.primaryBtn} onPress={addWeightRecord}>
                 <Text style={styles.btnText}>Sauvegarder</Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1, marginTop: 10 }]}>Sexe & Taille</Text>
+            <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1, marginTop: 15 }]}>Sexe</Text>
             <View style={styles.rowInline}>
-              <TextInput style={[styles.modernInput, { flex: 1, backgroundColor: inputBg, color: textColor, fontSize: fontSize, marginRight: 6 }]} value={gender} onChangeText={setGender} />
-              <TextInput style={[styles.modernInput, { flex: 1, backgroundColor: inputBg, color: textColor, fontSize: fontSize }]} value={height} onChangeText={setHeight} />
+              {['Homme', 'Femme'].map((g) => (
+                <TouchableOpacity 
+                  key={g} 
+                  style={[styles.genderBtn, gender === g && styles.genderBtnActive]} 
+                  onPress={() => setGender(g)}
+                >
+                  <Text style={[styles.genderBtnText, gender === g && { color: '#FFF' }]}>
+                    {g === 'Homme' ? '👨 Homme' : '👩 Femme'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
+
+            {/* Réglette de taille centimètre par centimètre */}
+            <Text style={[styles.inputLabel, { color: subText, fontSize: fontSize - 1, marginTop: 15 }]}>
+              Taille (Sélection précise : <Text style={{ color: '#10B981', fontWeight: 'bold' }}>{height}</Text>)
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.heightScrollRow}>
+              {HEIGHT_OPTIONS.map((h) => {
+                const isSelected = height === h;
+                return (
+                  <TouchableOpacity 
+                    key={h} 
+                    style={[styles.heightChipPrecise, isSelected && styles.heightChipPreciseActive]} 
+                    onPress={() => setHeight(h)}
+                  >
+                    <Text style={[styles.heightChipPreciseText, isSelected && { color: '#FFF', fontWeight: 'bold' }]}>
+                      {h}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
           </View>
 
           <View style={[styles.modernCard, { backgroundColor: cardBg }]}>
@@ -583,17 +633,17 @@ export default function App() {
                 <View key={set.id} style={styles.setRowModern}>
                   <Text style={{ width: 22, color: subText, fontWeight: 'bold', fontSize: fontSize - 1 }}>#{index + 1}</Text>
                   
-                  {/* REPS CONTROL AVEC BOUTONS +/- */}
+                  {/* REPS CONTROL (Boutons plus grands) */}
                   <View style={styles.inputGroupControl}>
                     <TouchableOpacity style={styles.miniAdjustBtn} onPress={() => adjustSetValue(ex.id, set.id, 'reps', -1)}><Text style={styles.miniBtnText}>-</Text></TouchableOpacity>
                     <TextInput style={[styles.setInputModern, { backgroundColor: inputBg, color: textColor, fontSize: fontSize }]} placeholder="Reps" placeholderTextColor="#9CA3AF" keyboardType="numeric" value={set.reps} onChangeText={(val) => updateSet(ex.id, set.id, 'reps', val)} />
                     <TouchableOpacity style={styles.miniAdjustBtn} onPress={() => adjustSetValue(ex.id, set.id, 'reps', 1)}><Text style={styles.miniBtnText}>+</Text></TouchableOpacity>
                   </View>
 
-                  {/* WEIGHT CONTROL AVEC BOUTONS +/- 2.5 */}
+                  {/* WEIGHT CONTROL (Boutons plus grands) */}
                   <View style={styles.inputGroupControl}>
                     <TouchableOpacity style={styles.miniAdjustBtn} onPress={() => adjustSetValue(ex.id, set.id, 'weight', -2.5)}><Text style={styles.miniBtnText}>-2.5</Text></TouchableOpacity>
-                    <TextInput style={[styles.setInputModern, { backgroundColor: inputBg, color: textColor, fontSize: fontSize }]} placeholder="Poids" placeholderTextColor="#9CA3AF" keyboardType="numeric" value={set.weight} onChangeText={(val) => updateSet(ex.id, set.id, 'weight', val)} />
+                    <TextInput style={[styles.setInputModern, { backgroundColor: inputBg, color: textColor, fontSize: fontSize }]} placeholder="Poids" placeholderTextColor="#9CA3AF" keyboardType="numbers-and-punctuation" value={set.weight} onChangeText={(val) => updateSet(ex.id, set.id, 'weight', val)} />
                     <TouchableOpacity style={styles.miniAdjustBtn} onPress={() => adjustSetValue(ex.id, set.id, 'weight', 2.5)}><Text style={styles.miniBtnText}>+2.5</Text></TouchableOpacity>
                   </View>
 
@@ -768,6 +818,16 @@ const styles = StyleSheet.create({
 
   recordBadge: { backgroundColor: 'rgba(16, 185, 129, 0.1)', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1, borderColor: '#10B981' },
 
+  // Styles Profil (Sexe & Réglette de taille précise)
+  genderBtn: { flex: 1, paddingVertical: 10, borderRadius: 8, borderWidth: 1, borderColor: '#4B5563', alignItems: 'center', marginHorizontal: 3, backgroundColor: 'transparent' },
+  genderBtnActive: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' },
+  genderBtnText: { color: '#9CA3AF', fontWeight: 'bold' },
+  
+  heightScrollRow: { flexDirection: 'row', marginTop: 6, marginBottom: 5 },
+  heightChipPrecise: { paddingVertical: 8, paddingHorizontal: 10, borderRadius: 6, borderWidth: 1, borderColor: '#4B5563', marginRight: 6, backgroundColor: 'transparent', minWidth: 50, alignItems: 'center' },
+  heightChipPreciseActive: { backgroundColor: '#10B981', borderColor: '#10B981' },
+  heightChipPreciseText: { color: '#9CA3AF', fontSize: 12, fontWeight: '600' },
+
   muscleGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 5 },
   muscleCardItem: { width: '31%', paddingVertical: 12, paddingHorizontal: 4, borderRadius: 10, borderWidth: 1, borderColor: '#4B5563', marginBottom: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
   muscleCardItemActive: { backgroundColor: '#EF4444', borderColor: '#EF4444' },
@@ -821,12 +881,11 @@ const styles = StyleSheet.create({
   deleteIconButton: { padding: 6, justifyContent: 'center', alignItems: 'center' },
   exHeading: { fontWeight: 'bold' },
   
-  // Style des lignes de séries avec boutons rapides +/-
   setRowModern: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, width: '100%' },
   inputGroupControl: { flexDirection: 'row', alignItems: 'center', flex: 1, marginHorizontal: 2 },
-  setInputModern: { flex: 1, borderWidth: 1, borderColor: '#4B5563', padding: 6, borderRadius: 4, textAlign: 'center', minWidth: 35 },
-  miniAdjustBtn: { backgroundColor: '#374151', paddingHorizontal: 6, paddingVertical: 8, borderRadius: 4, justifyContent: 'center', alignItems: 'center', marginHorizontal: 1 },
-  miniBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 10 },
+  setInputModern: { flex: 1, borderWidth: 1, borderColor: '#4B5563', padding: 8, borderRadius: 6, textAlign: 'center', minWidth: 40 },
+  miniAdjustBtn: { backgroundColor: '#374151', paddingHorizontal: 8, paddingVertical: 10, borderRadius: 6, justifyContent: 'center', alignItems: 'center', marginHorizontal: 2 },
+  miniBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 11 },
 
   deleteSetIcon: { width: 26, alignItems: 'center', justifyContent: 'center' },
   addSetModernBtn: { marginTop: 4, padding: 10, borderRadius: 8, backgroundColor: 'rgba(16, 185, 129, 0.1)', alignItems: 'center', width: '100%' },
